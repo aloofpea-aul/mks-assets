@@ -2,1520 +2,878 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ระบบสินทรัพย์ห้องเรียน — โรงเรียนเมืองกระบี่</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบสินทรัพย์ — โรงเรียนเมืองกระบี่</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ===== RESET & BASE ===== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B2B5E;--navy2:#243571;--gold:#F5A623;--gold2:#FFD87A;
+  --w:#fff;--g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;
+  --g400:#94A3B8;--g600:#475569;--g800:#1E293B;
+  --blue:#3B82F6;--green:#10B981;--amber:#F59E0B;--red:#EF4444;
+  --sw:240px;--th:60px;--r:12px;--r2:8px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --sh2:0 8px 32px rgba(0,0,0,.14);
+  --f:'Sarabun',sans-serif;
+}
+body{font-family:var(--f);background:var(--g50);color:var(--g800);
+  display:flex;min-height:100vh;font-size:15px;line-height:1.6;overflow-x:hidden}
 
-:root {
-  --navy: #1B2B5E;
-  --navy-light: #243571;
-  --navy-dark: #121E42;
-  --gold: #F5A623;
-  --gold-light: #FFD87A;
-  --white: #FFFFFF;
-  --gray-50: #F8FAFC;
-  --gray-100: #F1F5F9;
-  --gray-200: #E2E8F0;
-  --gray-400: #94A3B8;
-  --gray-600: #475569;
-  --gray-800: #1E293B;
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,.45);cursor:pointer}
+#overlay.show{display:block}
 
-  --blue: #3B82F6;
-  --green: #10B981;
-  --amber: #F59E0B;
-  --red: #EF4444;
-  --purple: #8B5CF6;
+/* SIDEBAR */
+.sb{width:var(--sw);background:var(--navy);color:#fff;
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.sb-hd{display:flex;align-items:center;justify-content:space-between;
+  padding:14px;border-bottom:1px solid rgba(255,255,255,.1);min-height:68px}
+.sb-logo{display:flex;align-items:center;gap:10px;overflow:hidden}
+.sb-icon{font-size:26px;flex-shrink:0}
+.sb-name{display:flex;flex-direction:column}
+.sb-title{font-weight:800;font-size:13px;color:var(--gold2)}
+.sb-sub{font-size:11px;opacity:.6}
+.sb-x{background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;
+  cursor:pointer;padding:6px;border-radius:6px;flex-shrink:0}
+.sb-x:hover{background:rgba(255,255,255,.12);color:#fff}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nlbl{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(255,255,255,.35);padding:10px 16px 3px}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 16px;
+  color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;
+  transition:all .15s;position:relative;user-select:none}
+.ni:hover{background:rgba(255,255,255,.1);color:#fff}
+.ni.on{background:var(--gold);color:var(--navy);font-weight:700}
+.ni.on::before{content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--gold2);border-radius:0 2px 2px 0}
+.ni-ic{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+.ni-tx{font-size:14px}
+.bdot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.sb-ft{border-top:1px solid rgba(255,255,255,.1);padding:12px 14px}
+.usr{display:flex;align-items:center;gap:10px}
+.uav{width:34px;height:34px;background:var(--gold);color:var(--navy);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;flex-shrink:0}
+.unm{display:block;font-size:13px;font-weight:600;color:#fff}
+.url{display:block;font-size:11px;color:rgba(255,255,255,.5)}
 
-  --sidebar-w: 240px;
-  --topbar-h: 64px;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+/* MAIN */
+.mn{flex:1;display:flex;flex-direction:column;min-height:100vh;margin-left:var(--sw);transition:margin-left .28s}
 
-  --font: 'Sarabun', sans-serif;
-}
+/* TOPBAR */
+.tb{height:var(--th);background:#fff;border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;position:sticky;top:0;z-index:100;gap:10px}
+.tb-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.tb-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mbtn{background:none;border:none;font-size:22px;cursor:pointer;
+  color:var(--g600);padding:6px;border-radius:6px}
+.mbtn:hover{background:var(--g100)}
+.bc{font-size:14px;color:var(--g600);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch{display:flex;align-items:center;gap:7px;background:var(--g100);
+  border:1.5px solid var(--g200);border-radius:8px;padding:6px 11px;flex:1;max-width:220px}
+.srch input{border:none;background:none;outline:none;font-family:var(--f);font-size:13px;width:100%;color:var(--g800)}
 
-body {
-  font-family: var(--font);
-  background: var(--gray-50);
-  color: var(--gray-800);
-  display: flex;
-  min-height: 100vh;
-  font-size: 15px;
-  line-height: 1.6;
-}
+/* BUTTONS */
+.bp{background:var(--navy);color:#fff;border:none;border-radius:var(--r2);
+  padding:8px 16px;font-family:var(--f);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;white-space:nowrap}
+.bp:hover{background:var(--navy2);box-shadow:0 4px 12px rgba(27,43,94,.25)}
+.bp:active{transform:scale(.97)}
+.bs{background:#fff;color:var(--g600);border:1.5px solid var(--g200);
+  border-radius:var(--r2);padding:7px 14px;font-family:var(--f);font-size:13px;cursor:pointer}
+.bs:hover{background:var(--g100)}
+.bbk{background:none;border:none;color:var(--navy);font-size:14px;font-weight:700;
+  cursor:pointer;padding:4px 8px;font-family:var(--f);flex-shrink:0}
+.bic{background:none;border:none;cursor:pointer;padding:4px 7px;
+  border-radius:6px;font-size:15px;transition:background .15s}
+.bic:hover{background:var(--g100)}
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-  width: var(--sidebar-w);
-  background: var(--navy);
-  color: var(--white);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  z-index: 100;
-  transition: width .25s ease;
-  overflow: hidden;
-}
+/* PAGES */
+.pg{display:none;padding:18px 14px 60px;animation:fi .2s ease}
+.pg.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.ph h1{font-size:20px;font-weight:800;color:var(--navy);flex:1}
+.psub{color:var(--g400);font-size:13px;width:100%;margin-top:-13px}
 
-.sidebar.collapsed { width: 64px; }
+/* STATS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.sc{background:#fff;border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;box-shadow:var(--sh);
+  border-left:4px solid transparent;transition:transform .2s}
+.sc:hover{transform:translateY(-2px)}
+.sc.sb_{border-left-color:var(--blue)}
+.sc.sg_{border-left-color:var(--green)}
+.sc.sy_{border-left-color:var(--amber)}
+.sc.sr_{border-left-color:var(--red)}
+.sic{font-size:24px}
+.sv{display:block;font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+.sl{display:block;font-size:11px;color:var(--g400);margin-top:3px;font-weight:500}
 
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 14px;
-  border-bottom: 1px solid rgba(255,255,255,.1);
-  min-height: 72px;
-}
+/* SECTION HDR */
+.sechd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sechd h2{font-size:15px;font-weight:700;color:var(--navy)}
+.gf{display:flex;gap:5px;flex-wrap:wrap}
+.fb{padding:4px 11px;border-radius:20px;border:1.5px solid var(--g200);
+  background:#fff;color:var(--g600);font-family:var(--f);font-size:12px;cursor:pointer;transition:all .15s}
+.fb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.fb:hover:not(.on){border-color:var(--navy);color:var(--navy)}
 
-.school-logo { display: flex; align-items: center; gap: 10px; overflow: hidden; }
-.logo-icon { font-size: 28px; flex-shrink: 0; }
-.school-name { display: flex; flex-direction: column; overflow: hidden; }
-.school-short { font-weight: 700; font-size: 13.5px; white-space: nowrap; color: var(--gold-light); }
-.school-sub { font-size: 11px; opacity: .65; white-space: nowrap; }
+/* BUILDINGS */
+.bcon{display:flex;flex-direction:column;gap:18px}
+.btit{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.bbdg{display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:8px;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+.bnm{font-size:15px;font-weight:700;color:var(--g800)}
+.bcnt{font-size:12px;color:var(--g400);margin-left:auto}
+.rrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
 
-.sidebar-toggle, .menu-btn {
-  background: none; border: none; color: inherit;
-  font-size: 20px; cursor: pointer; padding: 6px;
-  border-radius: 6px; transition: background .2s;
-}
-.sidebar-toggle:hover { background: rgba(255,255,255,.12); }
-.menu-btn { color: var(--gray-600); }
-.menu-btn:hover { background: var(--gray-100); }
+/* ROOM CARD */
+.rc{background:#fff;border-radius:var(--r);padding:14px;cursor:pointer;
+  box-shadow:var(--sh);border:2px solid transparent;
+  transition:all .2s;position:relative;overflow:hidden}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.rc.bA::before{background:var(--blue)}
+.rc.bB::before{background:var(--green)}
+.rc.bC::before{background:var(--amber)}
+.rc.bD::before{background:var(--red)}
+.rc:hover{transform:translateY(-2px);box-shadow:var(--sh2);border-color:var(--navy)}
+.rnum{font-size:15px;font-weight:800;color:var(--navy)}
+.rgrd{font-size:11px;color:var(--g400);margin:2px 0 8px}
+.rac{display:inline-flex;align-items:center;gap:4px;background:var(--g100);
+  border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--g600)}
+.rdot{position:absolute;top:11px;right:11px;width:8px;height:8px;border-radius:50%}
 
-.sidebar-nav {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-  scrollbar-width: none;
-}
-.sidebar-nav::-webkit-scrollbar { display: none; }
+/* TABLE */
+.tlbr{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.frow{display:flex;gap:7px;flex-wrap:wrap}
+.si,.fi{border:1.5px solid var(--g200);border-radius:var(--r2);
+  padding:7px 10px;font-family:var(--f);font-size:13px;color:var(--g800);
+  background:#fff;outline:none;transition:border-color .15s}
+.si:focus,.fi:focus{border-color:var(--navy)}
+textarea.fi{resize:vertical;min-height:60px}
+.tw{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:auto}
+.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
+.dt th{background:var(--g50);color:var(--g600);font-weight:700;font-size:11px;
+  letter-spacing:.04em;text-transform:uppercase;padding:11px 13px;
+  text-align:left;border-bottom:1px solid var(--g200);white-space:nowrap}
+.dt td{padding:11px 13px;border-bottom:1px solid var(--g100)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:var(--g50)}
+.erow{text-align:center;color:var(--g400);padding:32px!important}
+.stb{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.s-ดี{background:#D1FAE5;color:#065F46}
+.s-ชำรุด{background:#FEE2E2;color:#991B1B}
+.s-รอซ่อม{background:#FEF3C7;color:#92400E}
+.s-จำหน่าย{background:var(--g100);color:var(--g600)}
 
-.nav-group { margin-bottom: 4px; }
+/* CATEGORIES */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:13px}
+.ccard{background:#fff;border-radius:var(--r);padding:22px 14px;
+  box-shadow:var(--sh);text-align:center;cursor:pointer;transition:transform .2s}
+.ccard:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
+.ccic{font-size:32px;margin-bottom:8px}
+.ccnm{font-size:14px;font-weight:700;color:var(--navy)}
+.cccnt{font-size:12px;color:var(--g400);margin-top:3px}
 
-.nav-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.4);
-  padding: 10px 16px 4px;
-  white-space: nowrap;
-  overflow: hidden;
-}
+/* ROOM STATS */
+.rstats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.rsc{background:#fff;border-radius:8px;padding:9px 13px;
+  box-shadow:var(--sh);font-size:12px;display:flex;align-items:center;gap:7px}
+.rsc strong{font-size:17px;font-weight:800;color:var(--navy)}
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  color: rgba(255,255,255,.78);
-  text-decoration: none;
-  border-radius: 0;
-  transition: all .18s;
-  cursor: pointer;
-  white-space: nowrap;
-  position: relative;
-}
-.nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
-.nav-item.active {
-  background: var(--gold);
-  color: var(--navy-dark);
-  font-weight: 700;
-}
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--gold-light);
-  border-radius: 0 2px 2px 0;
-}
-.nav-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
-.nav-text { font-size: 14px; overflow: hidden; }
+/* SETTINGS */
+.setcard{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh);max-width:500px}
+.setcard h3{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--navy)}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--g600);margin-bottom:5px}
+.fg .fi{width:100%}
+.fhint{font-size:11px;color:var(--g400);margin-top:4px;display:block}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.smsg{margin-top:10px;font-size:13px;font-weight:600}
+.smsg.ok{color:var(--green)}.smsg.err{color:var(--red)}
 
-.building-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
+/* USERS */
+.ulist{display:flex;flex-direction:column;gap:8px;max-width:480px}
+.urow{background:#fff;border-radius:var(--r);padding:13px 15px;
+  box-shadow:var(--sh);display:flex;align-items:center;gap:12px}
+.urav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+.urnm{font-weight:600;font-size:13px}
+.urrl{font-size:11px;color:var(--g400)}
+.rchip{margin-left:auto;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0}
+.r-admin{background:#EDE9FE;color:#5B21B6}
+.r-co{background:#D1FAE5;color:#065F46}
 
-.sidebar-footer {
-  border-top: 1px solid rgba(255,255,255,.1);
-  padding: 14px 16px;
-}
-.user-info { display: flex; align-items: center; gap: 10px; }
-.user-avatar {
-  width: 34px; height: 34px;
-  background: var(--gold);
-  color: var(--navy-dark);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 14px; flex-shrink: 0;
-}
-.user-name { display: block; font-size: 13px; font-weight: 600; color: #fff; }
-.user-role { display: block; font-size: 11px; color: rgba(255,255,255,.5); }
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:14px}
+.mo.open{display:flex}
+.mdl{background:#fff;border-radius:16px;width:100%;max-width:540px;
+  max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--sh2);
+  animation:mi .22s ease}
+@keyframes mi{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.mhd{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 13px;border-bottom:1px solid var(--g100)}
+.mhd h3{font-size:16px;font-weight:800;color:var(--navy)}
+.mx{background:none;border:none;font-size:18px;cursor:pointer;
+  color:var(--g400);padding:4px 8px;border-radius:6px}
+.mx:hover{background:var(--g100)}
+.mbd{padding:16px 20px;overflow-y:auto;flex:1}
+.mft{display:flex;justify-content:flex-end;gap:9px;padding:13px 20px;border-top:1px solid var(--g100)}
+.ipv{margin-top:8px;border-radius:8px;overflow:hidden;max-height:130px}
+.ipv img{width:100%;object-fit:cover;border-radius:8px}
 
-/* ===== MAIN CONTENT ===== */
-.main-content {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  transition: margin-left .25s ease;
-}
-.sidebar.collapsed ~ .main-content { margin-left: 64px; }
+/* TOAST */
+.tst{position:fixed;bottom:20px;right:14px;z-index:999;
+  background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;
+  font-size:13px;font-weight:500;box-shadow:var(--sh2);
+  transform:translateY(70px);opacity:0;
+  transition:all .28s cubic-bezier(.34,1.56,.64,1);pointer-events:none;max-width:280px}
+.tst.show{transform:translateY(0);opacity:1}
+.tst.ok{border-left:4px solid var(--green)}
+.tst.er{border-left:4px solid var(--red)}
 
-/* ===== TOP BAR ===== */
-.topbar {
-  height: var(--topbar-h);
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  position: sticky;
-  top: 0; z-index: 90;
-  gap: 16px;
-}
-.topbar-left { display: flex; align-items: center; gap: 12px; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
-
-.breadcrumb { font-size: 14px; color: var(--gray-600); font-weight: 500; }
-
-.search-bar {
-  display: flex; align-items: center;
-  background: var(--gray-100);
-  border: 1px solid var(--gray-200);
-  border-radius: 8px;
-  padding: 6px 12px;
-  gap: 8px;
-  width: 220px;
-}
-.search-bar input {
-  border: none; background: none; outline: none;
-  font-family: var(--font); font-size: 14px;
-  width: 100%; color: var(--gray-800);
-}
-.search-icon { color: var(--gray-400); font-size: 15px; }
-
-/* ===== BUTTONS ===== */
-.btn-primary {
-  background: var(--navy);
-  color: var(--white);
-  border: none; border-radius: var(--radius-sm);
-  padding: 8px 18px;
-  font-family: var(--font); font-size: 14px; font-weight: 600;
-  cursor: pointer; transition: all .18s;
-  white-space: nowrap;
-}
-.btn-primary:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,43,94,.25); }
-
-.btn-secondary {
-  background: var(--white);
-  color: var(--gray-600);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  padding: 8px 18px;
-  font-family: var(--font); font-size: 14px;
-  cursor: pointer; transition: background .18s;
-}
-.btn-secondary:hover { background: var(--gray-100); }
-
-.btn-back {
-  background: none; border: none;
-  color: var(--navy); font-size: 14px; font-weight: 600;
-  cursor: pointer; padding: 6px 10px 6px 4px;
-  font-family: var(--font);
-}
-
-.btn-icon {
-  background: none; border: none; cursor: pointer;
-  padding: 4px 8px; border-radius: 6px; font-size: 15px;
-  transition: background .18s;
-}
-.btn-icon:hover { background: var(--gray-100); }
-
-/* ===== PAGES ===== */
-.page { display: none; padding: 28px 28px 48px; }
-.page.active { display: block; }
-
-.page-header {
-  display: flex; align-items: center; gap: 16px;
-  margin-bottom: 24px; flex-wrap: wrap;
-}
-.page-header h1 { font-size: 22px; font-weight: 800; color: var(--navy); flex: 1; }
-.page-header p { color: var(--gray-400); font-size: 14px; width: 100%; margin-top: -18px; }
-
-/* ===== STATS ===== */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.stat-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  padding: 20px;
-  display: flex; align-items: center; gap: 16px;
-  box-shadow: var(--shadow);
-  border-left: 4px solid transparent;
-  transition: transform .2s;
-}
-.stat-card:hover { transform: translateY(-2px); }
-.stat-blue { border-left-color: var(--blue); }
-.stat-green { border-left-color: var(--green); }
-.stat-yellow { border-left-color: var(--amber); }
-.stat-red { border-left-color: var(--red); }
-
-.stat-icon { font-size: 28px; }
-.stat-value { display: block; font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
-.stat-label { display: block; font-size: 12px; color: var(--gray-400); margin-top: 4px; font-weight: 500; }
-
-/* ===== SECTION HEADER ===== */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
-}
-.section-header h2 { font-size: 17px; font-weight: 700; color: var(--navy); }
-
-.grade-filter { display: flex; gap: 6px; flex-wrap: wrap; }
-.filter-btn {
-  padding: 5px 12px; border-radius: 20px;
-  border: 1.5px solid var(--gray-200);
-  background: var(--white); color: var(--gray-600);
-  font-family: var(--font); font-size: 13px; cursor: pointer;
-  transition: all .18s;
-}
-.filter-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
-.filter-btn:hover:not(.active) { border-color: var(--navy); color: var(--navy); }
-
-/* ===== BUILDINGS ===== */
-.buildings-container { display: flex; flex-direction: column; gap: 24px; }
-
-.building-section {}
-.building-title {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 12px;
-}
-.building-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px;
-  font-weight: 800; font-size: 15px; color: #fff;
-}
-.building-name { font-size: 16px; font-weight: 700; color: var(--gray-800); }
-.building-count { font-size: 13px; color: var(--gray-400); margin-left: auto; }
-
-.rooms-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-}
-
-.room-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  padding: 16px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  border: 2px solid transparent;
-  transition: all .2s;
-  position: relative;
-  overflow: hidden;
-}
-.room-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 4px;
-}
-.room-card.bldg-A::before { background: var(--blue); }
-.room-card.bldg-B::before { background: var(--green); }
-.room-card.bldg-C::before { background: var(--amber); }
-.room-card.bldg-D::before { background: var(--red); }
-
-.room-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--navy); }
-
-.room-number { font-size: 16px; font-weight: 800; color: var(--navy); }
-.room-grade { font-size: 11px; color: var(--gray-400); margin: 2px 0 8px; }
-.room-asset-count {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: var(--gray-100); border-radius: 6px;
-  padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--gray-600);
-}
-.room-status-dot {
-  position: absolute; top: 12px; right: 12px;
-  width: 8px; height: 8px; border-radius: 50%; background: var(--green);
-}
-
-/* ===== TABLE ===== */
-.toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
-}
-.filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.select-input, .form-input {
-  border: 1.5px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-family: var(--font); font-size: 14px;
-  color: var(--gray-800);
-  background: var(--white);
-  outline: none;
-  transition: border-color .18s;
-}
-.select-input:focus, .form-input:focus { border-color: var(--navy); }
-textarea.form-input { resize: vertical; min-height: 70px; }
-
-.table-container {
-  background: var(--white);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.data-table th {
-  background: var(--gray-50); color: var(--gray-600);
-  font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
-  padding: 12px 16px; text-align: left;
-  border-bottom: 1px solid var(--gray-200);
-}
-.data-table td { padding: 13px 16px; border-bottom: 1px solid var(--gray-100); }
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: var(--gray-50); }
-.empty-row { text-align: center; color: var(--gray-400); padding: 32px; }
-
-.status-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: 12px; font-weight: 600;
-}
-.status-ดี { background: #D1FAE5; color: #065F46; }
-.status-ชำรุด { background: #FEE2E2; color: #991B1B; }
-.status-รอซ่อม { background: #FEF3C7; color: #92400E; }
-.status-จำหน่าย { background: var(--gray-100); color: var(--gray-600); }
-
-/* ===== CATEGORIES GRID ===== */
-.categories-grid, .rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-.category-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  padding: 24px 20px;
-  box-shadow: var(--shadow);
-  text-align: center;
-  cursor: pointer;
-  transition: transform .2s;
-}
-.category-card:hover { transform: translateY(-3px); }
-.cat-icon { font-size: 36px; margin-bottom: 10px; }
-.cat-name { font-size: 15px; font-weight: 700; color: var(--navy); }
-.cat-count { font-size: 13px; color: var(--gray-400); margin-top: 4px; }
-
-/* ===== ROOM STATS ===== */
-.room-stats {
-  display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
-}
-.room-stat-chip {
-  background: var(--white); border-radius: 8px; padding: 10px 16px;
-  box-shadow: var(--shadow); font-size: 13px;
-  display: flex; align-items: center; gap: 8px;
-}
-.room-stat-chip strong { font-size: 18px; font-weight: 800; color: var(--navy); }
-
-/* ===== SETTINGS ===== */
-.settings-card {
-  background: var(--white); border-radius: var(--radius);
-  padding: 28px; box-shadow: var(--shadow); max-width: 560px;
-}
-.settings-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--navy); }
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
-.form-group .form-input { width: 100%; }
-.form-hint { font-size: 12px; color: var(--gray-400); margin-top: 4px; display: block; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.status-msg { margin-top: 12px; font-size: 14px; font-weight: 500; }
-.status-msg.ok { color: var(--green); }
-.status-msg.err { color: var(--red); }
-
-/* ===== USERS ===== */
-.users-list { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
-.user-row {
-  background: var(--white); border-radius: var(--radius);
-  padding: 14px 18px; box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 14px;
-}
-.user-row-avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 15px; color: #fff;
-  flex-shrink: 0;
-}
-.user-row-name { font-weight: 600; font-size: 14px; }
-.user-row-role { font-size: 12px; color: var(--gray-400); }
-.role-chip {
-  margin-left: auto; padding: 3px 10px;
-  border-radius: 20px; font-size: 12px; font-weight: 600;
-}
-.role-admin { background: #EDE9FE; color: #5B21B6; }
-.role-coadmin { background: #D1FAE5; color: #065F46; }
-
-/* ===== MODAL ===== */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,.45);
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--white); border-radius: 16px;
-  width: 100%; max-width: 580px;
-  max-height: 90vh; display: flex; flex-direction: column;
-  box-shadow: var(--shadow-lg);
-  animation: modalIn .22s ease;
-}
-@keyframes modalIn {
-  from { opacity: 0; transform: translateY(16px) scale(.97); }
-  to { opacity: 1; transform: none; }
-}
-.modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--gray-100);
-}
-.modal-header h3 { font-size: 17px; font-weight: 800; color: var(--navy); }
-.modal-close {
-  background: none; border: none; font-size: 18px; cursor: pointer;
-  color: var(--gray-400); padding: 4px 8px; border-radius: 6px;
-  transition: background .18s;
-}
-.modal-close:hover { background: var(--gray-100); }
-.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-.modal-footer {
-  display: flex; justify-content: flex-end; gap: 10px;
-  padding: 16px 24px; border-top: 1px solid var(--gray-100);
-}
-
-.image-preview {
-  margin-top: 10px; border-radius: 10px; overflow: hidden;
-  max-height: 160px;
-}
-.image-preview img { width: 100%; object-fit: cover; border-radius: 10px; }
-
-/* ===== TOAST ===== */
-.toast {
-  position: fixed; bottom: 24px; right: 24px; z-index: 999;
-  background: var(--navy); color: #fff;
-  padding: 12px 20px; border-radius: 10px;
-  font-size: 14px; font-weight: 500;
-  box-shadow: var(--shadow-lg);
-  transform: translateY(80px); opacity: 0;
-  transition: all .28s cubic-bezier(.34,1.56,.64,1);
-  pointer-events: none;
-  max-width: 320px;
-}
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.success { border-left: 4px solid var(--green); }
-.toast.error { border-left: 4px solid var(--red); }
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 640px) {
-  :root { --sidebar-w: 240px; }
-  .sidebar { transform: translateX(-100%); }
-  .sidebar.mobile-open { transform: translateX(0); }
-  .main-content { margin-left: 0 !important; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .page { padding: 16px 14px 40px; }
-  .topbar { padding: 0 14px; }
-  .search-bar { display: none; }
-  .rooms-row { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-}
-
-
-/* ===== MOBILE OVERRIDES ===== */
+/* RESPONSIVE */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);position:fixed;z-index:200}
-  .sidebar.open{transform:translateX(0)}
-  .main-content{margin-left:0!important}
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .page{padding:16px 14px 60px}
-  .topbar{padding:0 12px}
-  .search-wrap{display:none}
-  .rooms-row{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
-  .form-row{grid-template-columns:1fr}
+  .sb{transform:translateX(-100%)}
+  .sb.open{transform:translateX(0)}
+  .mn{margin-left:0!important}
+  .srch{display:none}
+  .sg{grid-template-columns:1fr 1fr}
+  .pg{padding:14px 12px 60px}
+  .fr{grid-template-columns:1fr}
 }
-.sidebar-overlay{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,.4)}
-.sidebar-overlay.show{display:block}
-.sidebar-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;padding:6px;border-radius:6px;flex-shrink:0}
-.sidebar-close:hover{background:rgba(255,255,255,.12);color:#fff}
-
+@media(min-width:769px){
+  .sg{grid-template-columns:repeat(4,1fr)}
+  .rrow{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .pg{padding:22px 22px 60px}
+}
 </style>
 </head>
 <body>
 
-<!-- Mobile overlay -->
-<div class="sidebar-overlay" id="overlay"></div>
+<div id="overlay"></div>
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <div class="school-logo">
-      <div class="logo-icon">🏫</div>
-      <div class="school-name">
-        <span class="school-short">รร.เมืองกระบี่</span>
-        <span class="school-sub">ระบบสินทรัพย์</span>
+<aside class="sb" id="sb">
+  <div class="sb-hd">
+    <div class="sb-logo">
+      <div class="sb-icon">🏫</div>
+      <div class="sb-name">
+        <span class="sb-title">รร.เมืองกระบี่</span>
+        <span class="sb-sub">ระบบสินทรัพย์</span>
       </div>
     </div>
-    <button class="sidebar-close" id="sidebarClose">✕</button>
+    <button class="sb-x" id="sbX">✕</button>
   </div>
-  <nav class="sidebar-nav">
-    <div class="nav-group">
-      <span class="nav-label">ภาพรวม</span>
-      <a class="nav-item active" data-page="dashboard">
-        <span class="nav-icon">📊</span><span class="nav-text">แดชบอร์ด</span>
-      </a>
+  <nav class="sb-nav">
+    <div><span class="nlbl">ภาพรวม</span>
+      <div class="ni on" data-pg="dashboard"><span class="ni-ic">📊</span><span class="ni-tx">แดชบอร์ด</span></div>
     </div>
-    <div class="nav-group">
-      <span class="nav-label">สินทรัพย์</span>
-      <a class="nav-item" data-page="assets">
-        <span class="nav-icon">📦</span><span class="nav-text">รายการสินทรัพย์</span>
-      </a>
-      <a class="nav-item" data-page="categories">
-        <span class="nav-icon">🏷️</span><span class="nav-text">ประเภทสินทรัพย์</span>
-      </a>
-      <a class="nav-item" data-page="rooms">
-        <span class="nav-icon">🚪</span><span class="nav-text">ห้องเรียนทั้งหมด</span>
-      </a>
+    <div><span class="nlbl">สินทรัพย์</span>
+      <div class="ni" data-pg="assets"><span class="ni-ic">📦</span><span class="ni-tx">รายการสินทรัพย์</span></div>
+      <div class="ni" data-pg="cats"><span class="ni-ic">🏷️</span><span class="ni-tx">ประเภทสินทรัพย์</span></div>
+      <div class="ni" data-pg="rooms"><span class="ni-ic">🚪</span><span class="ni-tx">ห้องเรียนทั้งหมด</span></div>
     </div>
-    <div class="nav-group">
-      <span class="nav-label">อาคาร</span>
-      <a class="nav-item" data-building="A">
-        <span class="nav-icon building-dot" style="background:#3B82F6"></span><span class="nav-text">อาคาร A</span>
-      </a>
-      <a class="nav-item" data-building="B">
-        <span class="nav-icon building-dot" style="background:#10B981"></span><span class="nav-text">อาคาร B</span>
-      </a>
-      <a class="nav-item" data-building="C">
-        <span class="nav-icon building-dot" style="background:#F59E0B"></span><span class="nav-text">อาคาร C</span>
-      </a>
-      <a class="nav-item" data-building="D">
-        <span class="nav-icon building-dot" style="background:#EF4444"></span><span class="nav-text">อาคาร D</span>
-      </a>
+    <div><span class="nlbl">อาคาร</span>
+      <div class="ni" data-bld="A"><span class="bdot" style="background:#3B82F6"></span><span class="ni-tx">อาคาร A</span></div>
+      <div class="ni" data-bld="B"><span class="bdot" style="background:#10B981"></span><span class="ni-tx">อาคาร B</span></div>
+      <div class="ni" data-bld="C"><span class="bdot" style="background:#F59E0B"></span><span class="ni-tx">อาคาร C</span></div>
+      <div class="ni" data-bld="D"><span class="bdot" style="background:#EF4444"></span><span class="ni-tx">อาคาร D</span></div>
     </div>
-    <div class="nav-group">
-      <span class="nav-label">ระบบ</span>
-      <a class="nav-item" data-page="settings">
-        <span class="nav-icon">⚙️</span><span class="nav-text">ตั้งค่า</span>
-      </a>
-      <a class="nav-item" data-page="users">
-        <span class="nav-icon">👥</span><span class="nav-text">ผู้ดูแลระบบ</span>
-      </a>
+    <div><span class="nlbl">ระบบ</span>
+      <div class="ni" data-pg="settings"><span class="ni-ic">⚙️</span><span class="ni-tx">ตั้งค่า</span></div>
+      <div class="ni" data-pg="users"><span class="ni-ic">👥</span><span class="ni-tx">ผู้ดูแลระบบ</span></div>
     </div>
   </nav>
-  <div class="sidebar-footer">
-    <div class="user-info">
-      <div class="user-avatar">A</div>
-      <div class="user-details">
-        <span class="user-name">Admin</span>
-        <span class="user-role">ผู้ดูแลระบบ</span>
-      </div>
+  <div class="sb-ft">
+    <div class="usr">
+      <div class="uav">A</div>
+      <div><span class="unm">Admin</span><span class="url">ผู้ดูแลระบบ</span></div>
     </div>
   </div>
 </aside>
 
-<!-- Main -->
-<main class="main-content" id="mainContent">
-  <header class="topbar">
-    <div class="topbar-left">
-      <button class="menu-btn" id="menuBtn">☰</button>
-      <div class="breadcrumb" id="breadcrumb">แดชบอร์ด</div>
+<main class="mn">
+  <header class="tb">
+    <div class="tb-l">
+      <button class="mbtn" id="mbtn">☰</button>
+      <span class="bc" id="bc">แดชบอร์ด</span>
     </div>
-    <div class="topbar-right">
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="ค้นหาสินทรัพย์..." id="globalSearch">
+    <div class="tb-r">
+      <div class="srch">
+        <span style="color:var(--g400)">🔍</span>
+        <input type="text" placeholder="ค้นหาสินทรัพย์..." id="qsrch">
       </div>
-      <button class="btn-primary" id="btnAddAsset">+ เพิ่ม</button>
+      <button class="bp" id="btnAdd">+ เพิ่ม</button>
     </div>
   </header>
 
   <!-- DASHBOARD -->
-  <div class="page active" id="page-dashboard">
-    <div class="page-header">
+  <div class="pg on" id="pg-dashboard">
+    <div class="ph">
       <h1>ภาพรวมสินทรัพย์</h1>
-      <p>โรงเรียนเมืองกระบี่ — ปีการศึกษา 2568</p>
+      <p class="psub">โรงเรียนเมืองกระบี่ — ปีการศึกษา 2568</p>
     </div>
-    <div class="stats-grid">
-      <div class="stat-card stat-blue">
-        <div class="stat-icon">📦</div>
-        <div class="stat-info"><span class="stat-value" id="totalAssets">—</span><span class="stat-label">สินทรัพย์ทั้งหมด</span></div>
-      </div>
-      <div class="stat-card stat-green">
-        <div class="stat-icon">🚪</div>
-        <div class="stat-info"><span class="stat-value" id="totalRooms">—</span><span class="stat-label">ห้องเรียน</span></div>
-      </div>
-      <div class="stat-card stat-yellow">
-        <div class="stat-icon">🏫</div>
-        <div class="stat-info"><span class="stat-value" id="totalBuildings">4</span><span class="stat-label">อาคาร</span></div>
-      </div>
-      <div class="stat-card stat-red">
-        <div class="stat-icon">⚠️</div>
-        <div class="stat-info"><span class="stat-value" id="totalRepair">—</span><span class="stat-label">รอซ่อมบำรุง</span></div>
-      </div>
+    <div class="sg">
+      <div class="sc sb_"><div class="sic">📦</div><div><span class="sv" id="st0">—</span><span class="sl">สินทรัพย์ทั้งหมด</span></div></div>
+      <div class="sc sg_"><div class="sic">🚪</div><div><span class="sv" id="st1">—</span><span class="sl">ห้องเรียน</span></div></div>
+      <div class="sc sy_"><div class="sic">🏫</div><div><span class="sv" id="st2">4</span><span class="sl">อาคาร</span></div></div>
+      <div class="sc sr_"><div class="sic">⚠️</div><div><span class="sv" id="st3">—</span><span class="sl">รอซ่อมบำรุง</span></div></div>
     </div>
-    <div class="section-header">
+    <div class="sechd">
       <h2>อาคารและห้องเรียน</h2>
-      <div class="grade-filter">
-        <button class="filter-btn active" data-grade="all">ทั้งหมด</button>
-        <button class="filter-btn" data-grade="ม.1">ม.1</button>
-        <button class="filter-btn" data-grade="ม.2">ม.2</button>
-        <button class="filter-btn" data-grade="ม.3">ม.3</button>
-        <button class="filter-btn" data-grade="ม.4">ม.4</button>
-        <button class="filter-btn" data-grade="ม.5">ม.5</button>
-        <button class="filter-btn" data-grade="ม.6">ม.6</button>
+      <div class="gf" id="gf">
+        <button class="fb on" data-g="all">ทั้งหมด</button>
+        <button class="fb" data-g="ม.1">ม.1</button>
+        <button class="fb" data-g="ม.2">ม.2</button>
+        <button class="fb" data-g="ม.3">ม.3</button>
+        <button class="fb" data-g="ม.4">ม.4</button>
+        <button class="fb" data-g="ม.5">ม.5</button>
+        <button class="fb" data-g="ม.6">ม.6</button>
       </div>
     </div>
-    <div class="buildings-container" id="buildingsContainer"></div>
+    <div class="bcon" id="bcon"></div>
   </div>
 
   <!-- ASSETS -->
-  <div class="page" id="page-assets">
-    <div class="page-header">
+  <div class="pg" id="pg-assets">
+    <div class="ph">
       <h1>รายการสินทรัพย์</h1>
-      <button class="btn-primary" id="btnAddAsset2">+ เพิ่มสินทรัพย์</button>
+      <button class="bp" id="btnAdd2">+ เพิ่มสินทรัพย์</button>
     </div>
-    <div class="toolbar">
-      <div class="filter-row">
-        <select id="filterBuilding" class="select-input"><option value="">ทุกอาคาร</option><option value="A">อาคาร A</option><option value="B">อาคาร B</option><option value="C">อาคาร C</option><option value="D">อาคาร D</option></select>
-        <select id="filterCategory" class="select-input"><option value="">ทุกประเภท</option></select>
-        <select id="filterStatus" class="select-input"><option value="">ทุกสถานะ</option><option value="ดี">ดี</option><option value="ชำรุด">ชำรุด</option><option value="รอซ่อม">รอซ่อม</option><option value="จำหน่าย">จำหน่าย</option></select>
+    <div class="tlbr">
+      <div class="frow">
+        <select class="si" id="fBld"><option value="">ทุกอาคาร</option><option value="A">อาคาร A</option><option value="B">อาคาร B</option><option value="C">อาคาร C</option><option value="D">อาคาร D</option></select>
+        <select class="si" id="fCat"><option value="">ทุกประเภท</option></select>
+        <select class="si" id="fSt"><option value="">ทุกสถานะ</option><option>ดี</option><option>ชำรุด</option><option>รอซ่อม</option><option>จำหน่าย</option></select>
       </div>
     </div>
-    <div class="table-container">
-      <table class="data-table" id="assetsTable">
-        <thead><tr><th>รหัสสินทรัพย์</th><th>ชื่อ</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
-        <tbody id="assetsTableBody"><tr><td colspan="7" class="empty-row">⏳ กำลังโหลดข้อมูล...</td></tr></tbody>
-      </table>
+    <div class="tw">
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+      <tbody id="atb"><tr><td colspan="7" class="erow">⏳ กำลังโหลด...</td></tr></tbody></table>
     </div>
   </div>
 
   <!-- CATEGORIES -->
-  <div class="page" id="page-categories">
-    <div class="page-header"><h1>ประเภทสินทรัพย์</h1></div>
-    <div class="categories-grid" id="categoriesGrid"></div>
+  <div class="pg" id="pg-cats">
+    <div class="ph"><h1>ประเภทสินทรัพย์</h1></div>
+    <div class="cgrid" id="cgrid"></div>
   </div>
 
-  <!-- ROOMS -->
-  <div class="page" id="page-rooms">
-    <div class="page-header"><h1>ห้องเรียนทั้งหมด</h1></div>
-    <div class="rooms-grid" id="roomsGrid"></div>
+  <!-- ALL ROOMS -->
+  <div class="pg" id="pg-rooms">
+    <div class="ph"><h1>ห้องเรียนทั้งหมด</h1></div>
+    <div class="rrow" id="allrooms"></div>
+  </div>
+
+  <!-- BUILDING -->
+  <div class="pg" id="pg-bld">
+    <div class="ph">
+      <button class="bbk" id="bldBk">← กลับ</button>
+      <h1 id="bldTitle">อาคาร</h1>
+    </div>
+    <div class="rrow" id="bldrooms"></div>
+  </div>
+
+  <!-- ROOM -->
+  <div class="pg" id="pg-room">
+    <div class="ph">
+      <button class="bbk" id="roomBk">← กลับ</button>
+      <h1 id="roomTitle">ห้องเรียน</h1>
+      <button class="bp" id="btnAdd3">+ เพิ่ม</button>
+    </div>
+    <div class="rstats" id="rstats"></div>
+    <div class="tw">
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>จำนวน</th><th>สถานะ</th><th>รูป</th><th>จัดการ</th></tr></thead>
+      <tbody id="rtb"><tr><td colspan="7" class="erow">ไม่มีข้อมูล</td></tr></tbody></table>
+    </div>
   </div>
 
   <!-- SETTINGS -->
-  <div class="page" id="page-settings">
-    <div class="page-header"><h1>ตั้งค่าระบบ</h1></div>
-    <div class="settings-card">
-      <h3>การเชื่อมต่อ Google Sheets</h3>
-      <div class="form-group"><label>Spreadsheet ID</label><input type="text" class="form-input" id="settingSheetId" placeholder="ใส่ Spreadsheet ID"></div>
-      <div class="form-group"><label>Google Drive Folder ID (รูปภาพ)</label><input type="text" class="form-input" id="settingDriveId" placeholder="ใส่ Folder ID"></div>
-      <div class="form-group"><label>Google Apps Script URL (Web App)</label><input type="text" class="form-input" id="settingGasUrl" placeholder="https://script.google.com/macros/s/..."></div>
-      <button class="btn-primary" id="btnSaveSettings">💾 บันทึกการตั้งค่า</button>
-      <div id="settingStatus" class="status-msg"></div>
+  <div class="pg" id="pg-settings">
+    <div class="ph"><h1>ตั้งค่าระบบ</h1></div>
+    <div class="setcard">
+      <h3>🔗 เชื่อมต่อ Google Sheets + GAS</h3>
+      <div class="fg"><label>Google Apps Script URL</label>
+        <input class="fi" id="cfgGas" placeholder="https://script.google.com/macros/s/...">
+        <span class="fhint">Deploy GAS เป็น Web App แล้ววาง URL ที่นี่</span></div>
+      <div class="fg"><label>Spreadsheet ID</label>
+        <input class="fi" id="cfgSheet" placeholder="10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw"></div>
+      <div class="fg"><label>Google Drive Folder ID</label>
+        <input class="fi" id="cfgDrive" placeholder="1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW"></div>
+      <button class="bp" id="btnSaveCfg">💾 บันทึกการตั้งค่า</button>
+      <div class="smsg" id="cfgMsg"></div>
     </div>
   </div>
 
   <!-- USERS -->
-  <div class="page" id="page-users">
-    <div class="page-header"><h1>ผู้ดูแลระบบ</h1></div>
-    <div class="users-list" id="usersList"></div>
-  </div>
-
-  <!-- BUILDING -->
-  <div class="page" id="page-building">
-    <div class="page-header">
-      <button class="btn-back" id="btnBackBuilding">← กลับ</button>
-      <h1 id="buildingPageTitle">อาคาร</h1>
-    </div>
-    <div class="rooms-grid" id="buildingRoomsGrid"></div>
-  </div>
-
-  <!-- ROOM -->
-  <div class="page" id="page-room">
-    <div class="page-header">
-      <button class="btn-back" id="btnBackRoom">← กลับ</button>
-      <h1 id="roomPageTitle">ห้องเรียน</h1>
-      <button class="btn-primary" id="btnAddRoomAsset">+ เพิ่ม</button>
-    </div>
-    <div class="room-stats" id="roomStats"></div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>จำนวน</th><th>สถานะ</th><th>รูปภาพ</th><th>จัดการ</th></tr></thead>
-        <tbody id="roomAssetsBody"><tr><td colspan="7" class="empty-row">ไม่มีข้อมูล</td></tr></tbody>
-      </table>
-    </div>
+  <div class="pg" id="pg-users">
+    <div class="ph"><h1>ผู้ดูแลระบบ</h1></div>
+    <div class="ulist" id="ulist"></div>
   </div>
 </main>
 
 <!-- MODAL -->
-<div class="modal-overlay" id="assetModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modalTitle">เพิ่มสินทรัพย์</h3>
-      <button class="modal-close" id="modalClose">✕</button>
+<div class="mo" id="modal">
+  <div class="mdl">
+    <div class="mhd">
+      <h3 id="mtitle">เพิ่มสินทรัพย์</h3>
+      <button class="mx" id="mclose">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label>รหัสสินทรัพย์</label><input type="text" class="form-input" id="fAssetId" placeholder="KBI-A101-001"></div>
-        <div class="form-group"><label>ชื่อสินทรัพย์ *</label><input type="text" class="form-input" id="fAssetName" placeholder="เช่น คอมพิวเตอร์ Dell"></div>
+    <div class="mbd">
+      <div class="fr">
+        <div class="fg"><label>รหัสสินทรัพย์</label><input class="fi" id="mId" placeholder="KBI-A101-001"></div>
+        <div class="fg"><label>ชื่อสินทรัพย์ *</label><input class="fi" id="mName" placeholder="เช่น คอมพิวเตอร์ Dell"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>ประเภท *</label>
-          <select class="form-input" id="fCategory">
+      <div class="fr">
+        <div class="fg"><label>ประเภท *</label>
+          <select class="fi" id="mCat">
             <option value="">เลือกประเภท</option>
             <option>อุปกรณ์ไอที</option><option>อุปกรณ์การสอน</option>
             <option>เฟอร์นิเจอร์</option><option>ครุภัณฑ์สำนักงาน</option><option>อื่น ๆ</option>
-          </select>
-        </div>
-        <div class="form-group"><label>อาคาร *</label>
-          <select class="form-input" id="fBuilding">
+          </select></div>
+        <div class="fg"><label>อาคาร *</label>
+          <select class="fi" id="mBld">
             <option value="">เลือกอาคาร</option>
             <option value="A">อาคาร A</option><option value="B">อาคาร B</option>
             <option value="C">อาคาร C</option><option value="D">อาคาร D</option>
-          </select>
-        </div>
+          </select></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>ห้อง *</label><input type="text" class="form-input" id="fRoom" placeholder="เช่น 101, ม.1/1"></div>
-        <div class="form-group"><label>ระดับชั้น</label>
-          <select class="form-input" id="fGrade">
+      <div class="fr">
+        <div class="fg"><label>ห้อง *</label><input class="fi" id="mRoom" placeholder="เช่น 101"></div>
+        <div class="fg"><label>ระดับชั้น</label>
+          <select class="fi" id="mGrd">
             <option value="">เลือกระดับ</option>
             <option>ม.1</option><option>ม.2</option><option>ม.3</option>
             <option>ม.4</option><option>ม.5</option><option>ม.6</option><option>ห้องพิเศษ</option>
-          </select>
-        </div>
+          </select></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>จำนวน</label><input type="number" class="form-input" id="fQty" value="1" min="1"></div>
-        <div class="form-group"><label>สถานะ</label>
-          <select class="form-input" id="fStatus">
-            <option value="ดี">ดี</option><option value="ชำรุด">ชำรุด</option>
-            <option value="รอซ่อม">รอซ่อม</option><option value="จำหน่าย">จำหน่าย</option>
-          </select>
-        </div>
+      <div class="fr">
+        <div class="fg"><label>จำนวน</label><input class="fi" type="number" id="mQty" value="1" min="1"></div>
+        <div class="fg"><label>สถานะ</label>
+          <select class="fi" id="mSt">
+            <option>ดี</option><option>ชำรุด</option><option>รอซ่อม</option><option>จำหน่าย</option>
+          </select></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>ยี่ห้อ/รุ่น</label><input type="text" class="form-input" id="fBrand" placeholder="เช่น Dell Optiplex 3080"></div>
-        <div class="form-group"><label>หมายเลขครุภัณฑ์</label><input type="text" class="form-input" id="fSerial" placeholder="ทะเบียนครุภัณฑ์"></div>
+      <div class="fr">
+        <div class="fg"><label>ยี่ห้อ/รุ่น</label><input class="fi" id="mBrand" placeholder="เช่น Dell Optiplex"></div>
+        <div class="fg"><label>หมายเลขครุภัณฑ์</label><input class="fi" id="mSerial" placeholder="ทะเบียนครุภัณฑ์"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>ปีที่ได้มา</label><input type="text" class="form-input" id="fYear" placeholder="เช่น 2565"></div>
-        <div class="form-group"><label>หมายเหตุ</label><input type="text" class="form-input" id="fNote" placeholder="รายละเอียดเพิ่มเติม"></div>
+      <div class="fr">
+        <div class="fg"><label>ปีที่ได้มา</label><input class="fi" id="mYear" placeholder="เช่น 2565"></div>
+        <div class="fg"><label>หมายเหตุ</label><input class="fi" id="mNote" placeholder="รายละเอียดเพิ่มเติม"></div>
       </div>
-      <div class="form-group">
+      <div class="fg">
         <label>รูปภาพ (Google Drive Link)</label>
-        <input type="text" class="form-input" id="fImageUrl" placeholder="วาง URL รูปจาก Google Drive">
-        <small class="form-hint">📎 แชร์ไฟล์รูป → Copy Link แล้ววางที่นี่</small>
+        <input class="fi" id="mImg" placeholder="วาง URL รูปจาก Google Drive">
+        <span class="fhint">📎 แชร์ไฟล์รูป → Copy Link แล้ววางที่นี่</span>
       </div>
-      <div id="imagePreview" class="image-preview"></div>
+      <div class="ipv" id="ipv"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="btnCancelModal">ยกเลิก</button>
-      <button class="btn-primary" id="btnSaveAsset">💾 บันทึก</button>
+    <div class="mft">
+      <button class="bs" id="mcancel">ยกเลิก</button>
+      <button class="bp" id="msave">💾 บันทึก</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="tst" id="tst"></div>
 
 <script>
-// ---- MOBILE SIDEBAR ----
-document.getElementById('menuBtn').addEventListener('click',()=>{
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-});
-['sidebarClose','overlay'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('click',()=>{
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('overlay').classList.remove('show');
-  });
-});
-function closeSidebarMobile(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-</script>
-<script>
-// ============================================================
-//  โรงเรียนเมืองกระบี่ — ระบบสินทรัพย์ห้องเรียน
-//  app.js  |  GitHub Pages + Google Sheets (GAS backend)
-// ============================================================
+'use strict';
+// ── CONFIG ──
+const BLDG = {A:{c:'#3B82F6',l:'อาคาร A'},B:{c:'#10B981',l:'อาคาร B'},C:{c:'#F59E0B',l:'อาคาร C'},D:{c:'#EF4444',l:'อาคาร D'}};
+const CATIC = {'อุปกรณ์ไอที':'💻','อุปกรณ์การสอน':'📐','เฟอร์นิเจอร์':'🪑','ครุภัณฑ์สำนักงาน':'🗄️','อื่น ๆ':'📦'};
+let DATA=[], EDIT=null, CBLD=null, CROOM=null, GF='all';
 
-/* ---- CONFIG (แก้ไขค่าที่นี่ หรือผ่านหน้า Settings) ---- */
-const CONFIG = {
-  GAS_URL: localStorage.getItem('gasUrl') || '',
-  SHEET_ID: localStorage.getItem('sheetId') || '10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw',
-  DRIVE_FOLDER: localStorage.getItem('driveId') || '1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW',
-};
+const gasUrl=()=>localStorage.getItem('gasUrl')||'';
+const $=id=>document.getElementById(id);
 
-/* ---- BUILDING COLORS ---- */
-const BUILDING_COLORS = {
-  A: { bg: '#3B82F6', label: 'อาคาร A' },
-  B: { bg: '#10B981', label: 'อาคาร B' },
-  C: { bg: '#F59E0B', label: 'อาคาร C' },
-  D: { bg: '#EF4444', label: 'อาคาร D' },
-};
-
-const CATEGORY_ICONS = {
-  'อุปกรณ์ไอที': '💻',
-  'อุปกรณ์การสอน': '📐',
-  'เฟอร์นิเจอร์': '🪑',
-  'ครุภัณฑ์สำนักงาน': '🗄️',
-  'อื่น ๆ': '📦',
-};
-
-/* ---- APP STATE ---- */
-let STATE = {
-  assets: [],       // raw data from sheet
-  editId: null,
-  currentBuilding: null,
-  currentRoom: null,
-  currentGradeFilter: 'all',
-};
-
-/* ===================== DATA LAYER ===================== */
-
-/* Sample offline data — ใช้ทดสอบก่อนเชื่อม GAS */
-function getSampleData() {
-  const grades = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
-  const rooms = [
-    { room: '101', building: 'A', grade: 'ม.1' },
-    { room: '102', building: 'A', grade: 'ม.1' },
-    { room: '103', building: 'A', grade: 'ม.2' },
-    { room: '104', building: 'A', grade: 'ม.2' },
-    { room: '201', building: 'B', grade: 'ม.3' },
-    { room: '202', building: 'B', grade: 'ม.3' },
-    { room: '203', building: 'B', grade: 'ม.4' },
-    { room: '301', building: 'C', grade: 'ม.5' },
-    { room: '302', building: 'C', grade: 'ม.5' },
-    { room: '303', building: 'C', grade: 'ม.6' },
-    { room: '401', building: 'D', grade: 'ม.6' },
-    { room: 'คอมพิวเตอร์', building: 'D', grade: 'ห้องพิเศษ' },
+// ── SAMPLE ──
+function sample(){
+  const defs=[
+    {b:'A',r:'101',g:'ม.1'},{b:'A',r:'102',g:'ม.1'},{b:'A',r:'103',g:'ม.2'},
+    {b:'B',r:'201',g:'ม.3'},{b:'B',r:'202',g:'ม.3'},{b:'B',r:'203',g:'ม.4'},
+    {b:'C',r:'301',g:'ม.5'},{b:'C',r:'302',g:'ม.6'},
+    {b:'D',r:'401',g:'ม.6'},{b:'D',r:'คอม',g:'ห้องพิเศษ'},
   ];
-  const items = ['คอมพิวเตอร์ Dell', 'โปรเจกเตอร์ Epson', 'โต๊ะนักเรียน', 'เก้าอี้นักเรียน',
-    'กระดานไวท์บอร์ด', 'ทีวี 55 นิ้ว', 'ลำโพงห้องเรียน', 'เครื่องปรับอากาศ', 'พัดลม', 'ตู้เก็บของ'];
-  const cats = ['อุปกรณ์ไอที', 'อุปกรณ์ไอที', 'เฟอร์นิเจอร์', 'เฟอร์นิเจอร์',
-    'อุปกรณ์การสอน', 'อุปกรณ์ไอที', 'อุปกรณ์การสอน', 'ครุภัณฑ์สำนักงาน', 'ครุภัณฑ์สำนักงาน', 'เฟอร์นิเจอร์'];
-  const statuses = ['ดี', 'ดี', 'ดี', 'ชำรุด', 'รอซ่อม'];
-  let id = 1;
-  const data = [];
-  rooms.forEach(r => {
-    const count = 3 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < count; i++) {
-      const idx = Math.floor(Math.random() * items.length);
-      data.push({
-        id: `KBI-${r.building}${r.room.padStart(3,'0')}-${String(id).padStart(3,'0')}`,
-        name: items[idx],
-        category: cats[idx],
-        building: r.building,
-        room: r.room,
-        grade: r.grade,
-        qty: (idx <= 1 ? 1 : idx <= 3 ? 30 + Math.floor(Math.random()*10) : Math.floor(Math.random()*3+1)),
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        brand: '',
-        serial: '',
-        year: '256' + Math.floor(Math.random()*5),
-        note: '',
-        imageUrl: '',
-      });
-      id++;
+  const its=[['คอมพิวเตอร์ Dell','อุปกรณ์ไอที'],['โปรเจกเตอร์ Epson','อุปกรณ์ไอที'],
+    ['โต๊ะนักเรียน','เฟอร์นิเจอร์'],['เก้าอี้นักเรียน','เฟอร์นิเจอร์'],
+    ['กระดานไวท์บอร์ด','อุปกรณ์การสอน'],['ทีวี Samsung','อุปกรณ์ไอที'],
+    ['พัดลม','ครุภัณฑ์สำนักงาน'],['ตู้ล็อคเกอร์','เฟอร์นิเจอร์']];
+  const sts=['ดี','ดี','ดี','ดี','ชำรุด','รอซ่อม'];
+  let n=1,out=[];
+  defs.forEach(d=>{
+    for(let i=0;i<3+Math.floor(Math.random()*3);i++){
+      const [nm,cat]=its[Math.floor(Math.random()*its.length)];
+      out.push({id:`KBI-${d.b}${d.r.replace(/\D/g,'').padStart(3,'0')}-${String(n++).padStart(3,'0')}`,
+        name:nm,category:cat,building:d.b,room:d.r,grade:d.g,
+        qty:cat==='เฟอร์นิเจอร์'?35:1,status:sts[Math.floor(Math.random()*sts.length)],
+        brand:'',serial:'',year:'',note:'',imageUrl:''});
     }
   });
-  return data;
+  return out;
 }
 
-async function loadAssets() {
-  if (CONFIG.GAS_URL) {
-    try {
-      const res = await fetch(CONFIG.GAS_URL + '?action=getAssets');
-      const json = await res.json();
-      STATE.assets = json.data || [];
-    } catch(e) {
-      console.warn('GAS fetch failed, using sample data:', e);
-      if (!STATE.assets.length) STATE.assets = getSampleData();
-    }
-  } else {
-    // offline demo
-    if (!STATE.assets.length) STATE.assets = getSampleData();
+// ── DATA ──
+async function load(){
+  const url=gasUrl();
+  if(url){
+    try{
+      const r=await fetch(url+'?action=getAssets');
+      const j=await r.json();
+      if(j.data&&j.data.length) DATA=j.data; else DATA=sample();
+    }catch(e){if(!DATA.length)DATA=sample();}
+  } else { if(!DATA.length) DATA=sample(); }
+}
+async function persist(asset){
+  const url=gasUrl();
+  if(url){
+    try{
+      await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:EDIT?'updateAsset':'addAsset',data:asset})});
+    }catch(e){}
   }
+  if(EDIT){const i=DATA.findIndex(a=>a.id===EDIT);if(i>-1)DATA[i]={...asset,id:EDIT};}
+  else{asset.id='KBI-'+Date.now();DATA.push(asset);}
+}
+async function remove(id){
+  const url=gasUrl();
+  if(url){try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'deleteAsset',id})});}catch(e){}}
+  DATA=DATA.filter(a=>a.id!==id);
 }
 
-async function saveAsset(asset) {
-  if (CONFIG.GAS_URL) {
-    const res = await fetch(CONFIG.GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: STATE.editId ? 'updateAsset' : 'addAsset', data: asset }),
-    });
-    return await res.json();
-  } else {
-    // local only
-    if (STATE.editId) {
-      const idx = STATE.assets.findIndex(a => a.id === STATE.editId);
-      if (idx !== -1) STATE.assets[idx] = { ...asset, id: STATE.editId };
-    } else {
-      asset.id = 'KBI-' + Date.now();
-      STATE.assets.push(asset);
-    }
-    return { success: true };
-  }
+// ── STATS ──
+function updStats(data){
+  $(data?'st0':'st0').textContent=(data||DATA).length.toLocaleString();
+  const rms=new Set((data||DATA).map(a=>a.building+'|'+a.room));
+  $('st1').textContent=rms.size;
+  $('st3').textContent=(data||DATA).filter(a=>a.status==='ชำรุด'||a.status==='รอซ่อม').length;
 }
 
-async function deleteAsset(id) {
-  if (CONFIG.GAS_URL) {
-    await fetch(CONFIG.GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'deleteAsset', id }),
-    });
-  }
-  STATE.assets = STATE.assets.filter(a => a.id !== id);
-}
-
-/* ===================== RENDER ===================== */
-
-function getFilteredAssets() {
-  let data = [...STATE.assets];
-  if (STATE.currentGradeFilter !== 'all') {
-    const gradeMap = { m1:'ม.1', m2:'ม.2', m3:'ม.3', m4:'ม.4', m5:'ม.5', m6:'ม.6' };
-    data = data.filter(a => a.grade === gradeMap[STATE.currentGradeFilter]);
-  }
-  return data;
-}
-
-function renderDashboard() {
-  const assets = getFilteredAssets();
-  const rooms = [...new Set(assets.map(a => a.building + '|' + a.room))];
-  const repairCount = assets.filter(a => a.status === 'ชำรุด' || a.status === 'รอซ่อม').length;
-
-  document.getElementById('totalAssets').textContent = assets.length.toLocaleString();
-  document.getElementById('totalRooms').textContent = rooms.length;
-  document.getElementById('totalRepair').textContent = repairCount;
-
-  // Group by building
-  const byBuilding = {};
-  assets.forEach(a => {
-    if (!byBuilding[a.building]) byBuilding[a.building] = {};
-    if (!byBuilding[a.building][a.room]) byBuilding[a.building][a.room] = { assets: [], grade: a.grade };
-    byBuilding[a.building][a.room].assets.push(a);
-    byBuilding[a.building][a.room].grade = a.grade;
+// ── DASHBOARD ──
+function renderDash(){
+  let data=GF==='all'?[...DATA]:DATA.filter(a=>a.grade===GF);
+  updStats(data);
+  const byB={};
+  data.forEach(a=>{
+    if(!byB[a.building])byB[a.building]={};
+    if(!byB[a.building][a.room])byB[a.building][a.room]={list:[],grade:a.grade};
+    byB[a.building][a.room].list.push(a);
   });
-
-  const container = document.getElementById('buildingsContainer');
-  container.innerHTML = '';
-
-  Object.entries(byBuilding).sort().forEach(([bld, roomsObj]) => {
-    const color = (BUILDING_COLORS[bld] || {}).bg || '#888';
-    const label = (BUILDING_COLORS[bld] || {}).label || 'อาคาร ' + bld;
-    const roomCount = Object.keys(roomsObj).length;
-
-    const sec = document.createElement('div');
-    sec.className = 'building-section';
-    sec.innerHTML = `
-      <div class="building-title">
-        <div class="building-badge" style="background:${color}">${bld}</div>
-        <span class="building-name">${label}</span>
-        <span class="building-count">${roomCount} ห้อง</span>
-      </div>
-      <div class="rooms-row" id="rooms-${bld}"></div>`;
-    container.appendChild(sec);
-
-    const rowEl = sec.querySelector('#rooms-' + bld);
-    Object.entries(roomsObj).sort().forEach(([room, info]) => {
-      const hasRepair = info.assets.some(a => a.status === 'ชำรุด' || a.status === 'รอซ่อม');
-      const card = document.createElement('div');
-      card.className = `room-card bldg-${bld}`;
-      card.innerHTML = `
-        <div class="room-status-dot" style="background:${hasRepair ? '#F59E0B' : '#10B981'}"></div>
-        <div class="room-number">ห้อง ${room}</div>
-        <div class="room-grade">${info.grade}</div>
-        <div class="room-asset-count">📦 ${info.assets.length} รายการ</div>`;
-      card.addEventListener('click', () => openRoom(bld, room, label));
-      rowEl.appendChild(card);
+  const con=$('bcon'); con.innerHTML='';
+  Object.keys(byB).sort().forEach(b=>{
+    const {c,l}=BLDG[b]||{c:'#888',l:'อาคาร '+b};
+    const rms=byB[b]; const rc=Object.keys(rms).length;
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="btit">
+      <div class="bbdg" style="background:${c}">${b}</div>
+      <span class="bnm">${l}</span><span class="bcnt">${rc} ห้อง</span>
+    </div><div class="rrow" id="rr-${b}"></div>`;
+    con.appendChild(sec);
+    const row=sec.querySelector('#rr-'+b);
+    Object.keys(rms).sort().forEach(r=>{
+      const inf=rms[r];
+      const rep=inf.list.some(a=>a.status==='ชำรุด'||a.status==='รอซ่อม');
+      const cd=document.createElement('div');
+      cd.className=`rc b${b}`;
+      cd.innerHTML=`<div class="rdot" style="background:${rep?'#F59E0B':'#10B981'}"></div>
+        <div class="rnum">ห้อง ${r}</div>
+        <div class="rgrd">${inf.grade}</div>
+        <div class="rac">📦 ${inf.list.length} รายการ</div>`;
+      cd.onclick=()=>goRoom(b,r,l);
+      row.appendChild(cd);
     });
   });
 }
 
-function renderAssetsTable(filterBuilding = '', filterCategory = '', filterStatus = '') {
-  let data = [...STATE.assets];
-  if (filterBuilding) data = data.filter(a => a.building === filterBuilding);
-  if (filterCategory) data = data.filter(a => a.category === filterCategory);
-  if (filterStatus) data = data.filter(a => a.status === filterStatus);
-
-  const globalQ = (document.getElementById('globalSearch').value || '').toLowerCase();
-  if (globalQ) data = data.filter(a =>
-    (a.name || '').toLowerCase().includes(globalQ) ||
-    (a.id || '').toLowerCase().includes(globalQ) ||
-    (a.room || '').toLowerCase().includes(globalQ)
-  );
-
-  const tbody = document.getElementById('assetsTableBody');
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">ไม่พบข้อมูล</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(a => `
-    <tr>
-      <td><code style="font-size:12px;color:#475569">${a.id}</code></td>
-      <td><strong>${a.name}</strong></td>
-      <td>${CATEGORY_ICONS[a.category] || '📦'} ${a.category}</td>
-      <td>อาคาร ${a.building} / ${a.room}<br><small style="color:#94A3B8">${a.grade}</small></td>
-      <td>${a.qty}</td>
-      <td><span class="status-badge status-${a.status}">${a.status}</span></td>
-      <td>
-        <button class="btn-icon" onclick="editAsset('${a.id}')" title="แก้ไข">✏️</button>
-        <button class="btn-icon" onclick="confirmDelete('${a.id}')" title="ลบ">🗑️</button>
-      </td>
-    </tr>`).join('');
+// ── ASSETS TABLE ──
+function renderAssets(){
+  const b=$('fBld').value,c=$('fCat').value,s=$('fSt').value,q=$('qsrch').value.toLowerCase();
+  let d=[...DATA];
+  if(b)d=d.filter(a=>a.building===b);
+  if(c)d=d.filter(a=>a.category===c);
+  if(s)d=d.filter(a=>a.status===s);
+  if(q)d=d.filter(a=>(a.name+a.id+a.room).toLowerCase().includes(q));
+  const tb=$('atb');
+  if(!d.length){tb.innerHTML='<tr><td colspan="7" class="erow">ไม่พบข้อมูล</td></tr>';return;}
+  tb.innerHTML=d.map(a=>`<tr>
+    <td><code style="font-size:11px;color:#475569">${a.id}</code></td>
+    <td><strong>${a.name}</strong>${a.brand?`<br><small style="color:#94A3B8">${a.brand}</small>`:''}</td>
+    <td>${CATIC[a.category]||'📦'} ${a.category}</td>
+    <td>${a.building}/${a.room}<br><small style="color:#94A3B8">${a.grade}</small></td>
+    <td>${a.qty}</td>
+    <td><span class="stb s-${a.status}">${a.status}</span></td>
+    <td><button class="bic" onclick="openModal('${a.id}')">✏️</button>
+        <button class="bic" onclick="del('${a.id}')">🗑️</button></td></tr>`).join('');
 }
 
-function renderCategories() {
-  const counts = {};
-  STATE.assets.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
-  const allCats = Object.keys(CATEGORY_ICONS);
-  allCats.forEach(c => { if (!counts[c]) counts[c] = 0; });
-
-  const grid = document.getElementById('categoriesGrid');
-  grid.innerHTML = Object.entries(counts).map(([cat, cnt]) => `
-    <div class="category-card" onclick="filterByCategory('${cat}')">
-      <div class="cat-icon">${CATEGORY_ICONS[cat] || '📦'}</div>
-      <div class="cat-name">${cat}</div>
-      <div class="cat-count">${cnt} รายการ</div>
+// ── CATEGORIES ──
+function renderCats(){
+  const counts={};
+  DATA.forEach(a=>{counts[a.category]=(counts[a.category]||0)+1;});
+  Object.keys(CATIC).forEach(c=>{if(!counts[c])counts[c]=0;});
+  $('cgrid').innerHTML=Object.entries(counts).map(([c,n])=>`
+    <div class="ccard" onclick="goAssets('',c,'','')">
+      <div class="ccic">${CATIC[c]||'📦'}</div>
+      <div class="ccnm">${c}</div><div class="cccnt">${n} รายการ</div>
     </div>`).join('');
 }
 
-function renderAllRooms() {
-  const rooms = {};
-  STATE.assets.forEach(a => {
-    const k = a.building + '|' + a.room;
-    if (!rooms[k]) rooms[k] = { building: a.building, room: a.room, grade: a.grade, count: 0 };
-    rooms[k].count++;
+// ── ALL ROOMS ──
+function renderAllRooms(){
+  const rms={};
+  DATA.forEach(a=>{
+    const k=a.building+'|'+a.room;
+    if(!rms[k])rms[k]={b:a.building,r:a.room,g:a.grade,n:0};
+    rms[k].n++;
   });
-  const grid = document.getElementById('roomsGrid');
-  grid.innerHTML = Object.values(rooms).sort((a,b) => a.building.localeCompare(b.building) || a.room.localeCompare(b.room))
-    .map(r => {
-      const color = (BUILDING_COLORS[r.building] || {}).bg || '#888';
-      return `<div class="room-card bldg-${r.building}" onclick="openRoom('${r.building}','${r.room}','${BUILDING_COLORS[r.building]?.label||''}')">
-        <div class="room-number">ห้อง ${r.room}</div>
-        <div class="room-grade">อาคาร ${r.building} · ${r.grade}</div>
-        <div class="room-asset-count">📦 ${r.count} รายการ</div>
-      </div>`;
-    }).join('');
+  $('allrooms').innerHTML=Object.values(rms)
+    .sort((a,z)=>a.b.localeCompare(z.b)||a.r.localeCompare(z.r))
+    .map(rm=>`<div class="rc b${rm.b}" onclick="goRoom('${rm.b}','${rm.r}','${BLDG[rm.b]?.l||''}')">
+      <div class="rnum">ห้อง ${rm.r}</div>
+      <div class="rgrd">อาคาร ${rm.b} · ${rm.g}</div>
+      <div class="rac">📦 ${rm.n} รายการ</div></div>`).join('');
 }
 
-function openRoom(building, room, buildingLabel) {
-  STATE.currentBuilding = building;
-  STATE.currentRoom = room;
-  const assets = STATE.assets.filter(a => a.building === building && a.room === room);
-  const grade = assets[0]?.grade || '';
-
-  document.getElementById('roomPageTitle').textContent = `ห้อง ${room} — ${buildingLabel || 'อาคาร '+building} (${grade})`;
-
-  const byStatus = { ดี: 0, ชำรุด: 0, รอซ่อม: 0, จำหน่าย: 0 };
-  assets.forEach(a => { if (byStatus[a.status] !== undefined) byStatus[a.status]++; });
-
-  document.getElementById('roomStats').innerHTML = `
-    <div class="room-stat-chip">📦 <strong>${assets.length}</strong> รายการ</div>
-    <div class="room-stat-chip">✅ <strong>${byStatus['ดี']}</strong> ดี</div>
-    <div class="room-stat-chip">⚠️ <strong>${byStatus['ชำรุด'] + byStatus['รอซ่อม']}</strong> ซ่อม</div>`;
-
-  document.getElementById('roomAssetsBody').innerHTML = assets.length ? assets.map(a => `
-    <tr>
-      <td><code style="font-size:11px">${a.id}</code></td>
-      <td><strong>${a.name}</strong><br><small style="color:#94A3B8">${a.brand||''}</small></td>
-      <td>${CATEGORY_ICONS[a.category]||'📦'} ${a.category}</td>
-      <td>${a.qty}</td>
-      <td><span class="status-badge status-${a.status}">${a.status}</span></td>
-      <td>${a.imageUrl ? `<img src="${a.imageUrl}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">` : '—'}</td>
-      <td>
-        <button class="btn-icon" onclick="editAsset('${a.id}')">✏️</button>
-        <button class="btn-icon" onclick="confirmDelete('${a.id}')">🗑️</button>
-      </td>
-    </tr>`).join('')
-    : '<tr><td colspan="7" class="empty-row">ไม่มีสินทรัพย์ในห้องนี้</td></tr>';
-
-  showPage('room');
-  setBreadcrumb(`อาคาร ${building} › ห้อง ${room}`);
+// ── BUILDING ──
+function goBld(b){
+  CBLD=b;
+  const bl=BLDG[b]?.l||'อาคาร '+b;
+  $('bldTitle').textContent=bl;
+  const rms={};
+  DATA.filter(a=>a.building===b).forEach(a=>{
+    if(!rms[a.room])rms[a.room]={r:a.room,g:a.grade,n:0};
+    rms[a.room].n++;
+  });
+  $('bldrooms').innerHTML=Object.values(rms).sort((a,z)=>a.r.localeCompare(z.r))
+    .map(rm=>`<div class="rc b${b}" onclick="goRoom('${b}','${rm.r}','${bl}')">
+      <div class="rnum">ห้อง ${rm.r}</div><div class="rgrd">${rm.g}</div>
+      <div class="rac">📦 ${rm.n} รายการ</div></div>`).join('');
+  showPg('bld'); setBc(bl);
 }
 
-/* ===================== NAVIGATION ===================== */
-
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const el = document.getElementById('page-' + name);
-  if (el) el.classList.add('active');
-
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navEl = document.querySelector(`[data-page="${name}"]`);
-  if (navEl) navEl.classList.add('active');
+// ── ROOM ──
+function goRoom(b,r,bl){
+  CBLD=b; CROOM=r;
+  const assets=DATA.filter(a=>a.building===b&&a.room===r);
+  const grade=assets[0]?.grade||'';
+  $('roomTitle').textContent=`ห้อง ${r} — ${bl||'อาคาร '+b} (${grade})`;
+  const cnt={ดี:0,ชำรุด:0,รอซ่อม:0};
+  assets.forEach(a=>{if(cnt[a.status]!==undefined)cnt[a.status]++;});
+  $('rstats').innerHTML=`
+    <div class="rsc">📦<strong>${assets.length}</strong>รายการ</div>
+    <div class="rsc">✅<strong>${cnt['ดี']}</strong>ดี</div>
+    <div class="rsc">⚠️<strong>${cnt['ชำรุด']+cnt['รอซ่อม']}</strong>ซ่อม</div>`;
+  $('rtb').innerHTML=assets.length?assets.map(a=>`<tr>
+    <td><code style="font-size:11px">${a.id}</code></td>
+    <td><strong>${a.name}</strong>${a.brand?`<br><small style="color:#94A3B8">${a.brand}</small>`:''}</td>
+    <td>${CATIC[a.category]||'📦'} ${a.category}</td>
+    <td>${a.qty}</td>
+    <td><span class="stb s-${a.status}">${a.status}</span></td>
+    <td>${a.imageUrl?`<img src="${drvThumb(a.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'">`:'-'}</td>
+    <td><button class="bic" onclick="openModal('${a.id}')">✏️</button>
+        <button class="bic" onclick="del('${a.id}')">🗑️</button></td></tr>`).join('')
+    :'<tr><td colspan="7" class="erow">ไม่มีสินทรัพย์ในห้องนี้</td></tr>';
+  showPg('room'); setBc(`อาคาร ${b} › ห้อง ${r}`);
 }
 
-function setBreadcrumb(text) {
-  document.getElementById('breadcrumb').textContent = text;
+function goAssets(b,c,s,q){
+  if(b)$('fBld').value=b;
+  if(c)$('fCat').value=c;
+  if(s)$('fSt').value=s;
+  showPg('assets'); setBc('รายการสินทรัพย์'); renderAssets();
 }
 
-function filterByCategory(cat) {
-  showPage('assets');
-  setBreadcrumb('รายการสินทรัพย์');
-  document.getElementById('filterCategory').value = cat;
-  renderAssetsTable('', cat, '');
+// ── USERS ──
+function renderUsers(){
+  const us=[{n:'ผู้ดูแลระบบหลัก',r:'admin',i:'A',c:'#8B5CF6'},
+    {n:'ครูอนุชา วงศ์สวัสดิ์',r:'co',i:'อ',c:'#3B82F6'},
+    {n:'ครูสมหญิง ใจดี',r:'co',i:'ส',c:'#10B981'}];
+  $('ulist').innerHTML=us.map(u=>`<div class="urow">
+    <div class="urav" style="background:${u.c}">${u.i}</div>
+    <div><div class="urnm">${u.n}</div>
+      <div class="urrl">${u.r==='admin'?'ผู้ดูแลระบบ':'ผู้ช่วยดูแลระบบ'}</div></div>
+    <span class="rchip r-${u.r}">${u.r==='admin'?'Admin':'Co-Admin'}</span>
+  </div>`).join('');
 }
 
-/* ===================== MODAL ===================== */
+// ── SETTINGS ──
+function initCfg(){
+  $('cfgGas').value=localStorage.getItem('gasUrl')||'';
+  $('cfgSheet').value=localStorage.getItem('sheetId')||'10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw';
+  $('cfgDrive').value=localStorage.getItem('driveId')||'1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW';
+}
+function saveCfg(){
+  localStorage.setItem('gasUrl',$('cfgGas').value.trim());
+  localStorage.setItem('sheetId',$('cfgSheet').value.trim());
+  localStorage.setItem('driveId',$('cfgDrive').value.trim());
+  const m=$('cfgMsg'); m.className='smsg ok'; m.textContent='✅ บันทึกเรียบร้อย';
+  toast('บันทึกการตั้งค่าแล้ว','ok'); setTimeout(()=>m.textContent='',3000);
+}
 
-function openModal(assetId = null) {
-  STATE.editId = assetId;
-  const modal = document.getElementById('assetModal');
-  modal.classList.add('open');
-
-  if (assetId) {
-    const a = STATE.assets.find(x => x.id === assetId);
-    if (!a) return;
-    document.getElementById('modalTitle').textContent = 'แก้ไขสินทรัพย์';
-    document.getElementById('fAssetId').value = a.id;
-    document.getElementById('fAssetName').value = a.name;
-    document.getElementById('fCategory').value = a.category;
-    document.getElementById('fBuilding').value = a.building;
-    document.getElementById('fRoom').value = a.room;
-    document.getElementById('fGrade').value = a.grade;
-    document.getElementById('fQty').value = a.qty;
-    document.getElementById('fStatus').value = a.status;
-    document.getElementById('fBrand').value = a.brand || '';
-    document.getElementById('fSerial').value = a.serial || '';
-    document.getElementById('fYear').value = a.year || '';
-    document.getElementById('fNote').value = a.note || '';
-    document.getElementById('fImageUrl').value = a.imageUrl || '';
-    updateImagePreview(a.imageUrl);
+// ── MODAL ──
+function openModal(id=null){
+  EDIT=id;
+  $('mtitle').textContent=id?'แก้ไขสินทรัพย์':'เพิ่มสินทรัพย์';
+  if(id){
+    const a=DATA.find(x=>x.id===id); if(!a)return;
+    $('mId').value=a.id; $('mName').value=a.name; $('mCat').value=a.category;
+    $('mBld').value=a.building; $('mRoom').value=a.room; $('mGrd').value=a.grade;
+    $('mQty').value=a.qty; $('mSt').value=a.status; $('mBrand').value=a.brand||'';
+    $('mSerial').value=a.serial||''; $('mYear').value=a.year||'';
+    $('mNote').value=a.note||''; $('mImg').value=a.imageUrl||'';
+    prvImg(a.imageUrl);
   } else {
-    document.getElementById('modalTitle').textContent = 'เพิ่มสินทรัพย์';
-    ['fAssetId','fAssetName','fBuilding','fRoom','fBrand','fSerial','fYear','fNote','fImageUrl'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('fCategory').value = '';
-    document.getElementById('fGrade').value = '';
-    document.getElementById('fQty').value = 1;
-    document.getElementById('fStatus').value = 'ดี';
-    document.getElementById('imagePreview').innerHTML = '';
-
-    // Pre-fill room if inside room page
-    if (STATE.currentRoom) {
-      document.getElementById('fBuilding').value = STATE.currentBuilding || '';
-      document.getElementById('fRoom').value = STATE.currentRoom;
-    }
+    ['mId','mName','mRoom','mBrand','mSerial','mYear','mNote','mImg'].forEach(i=>$(i).value='');
+    $('mCat').value=''; $('mBld').value=CBLD||''; $('mGrd').value='';
+    $('mQty').value=1; $('mSt').value='ดี'; $('ipv').innerHTML='';
+    if(CROOM) $('mRoom').value=CROOM;
   }
+  $('modal').classList.add('open');
+}
+function closeModal(){ $('modal').classList.remove('open'); EDIT=null; }
+function prvImg(url){
+  const p=$('ipv');
+  if(url&&url.startsWith('http'))p.innerHTML=`<img src="${drvThumb(url)}" onerror="this.style.display='none'">`;
+  else p.innerHTML='';
+}
+function drvThumb(url){
+  const m=url.match(/\/d\/([^/]+)/);
+  return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`:url;
 }
 
-function closeModal() {
-  document.getElementById('assetModal').classList.remove('open');
-  STATE.editId = null;
+async function saveAsset(){
+  const a={id:$('mId').value.trim(),name:$('mName').value.trim(),
+    category:$('mCat').value,building:$('mBld').value,room:$('mRoom').value.trim(),
+    grade:$('mGrd').value,qty:parseInt($('mQty').value)||1,status:$('mSt').value,
+    brand:$('mBrand').value.trim(),serial:$('mSerial').value.trim(),
+    year:$('mYear').value.trim(),note:$('mNote').value.trim(),imageUrl:$('mImg').value.trim()};
+  if(!a.name||!a.building||!a.room){toast('กรุณากรอกชื่อ, อาคาร และห้อง','er');return;}
+  const btn=$('msave'); btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
+  try{
+    await persist(a);
+    toast(EDIT?'✅ แก้ไขเรียบร้อย':'✅ เพิ่มสินทรัพย์แล้ว','ok');
+    closeModal(); refresh();
+  }catch(e){toast('เกิดข้อผิดพลาด: '+e.message,'er');}
+  finally{btn.disabled=false;btn.textContent='💾 บันทึก';}
 }
 
-function updateImagePreview(url) {
-  const prev = document.getElementById('imagePreview');
-  if (url && url.startsWith('http')) {
-    // Convert Google Drive share link to direct
-    let imgUrl = url;
-    const m = url.match(/\/d\/([^/]+)/);
-    if (m) imgUrl = `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`;
-    prev.innerHTML = `<img src="${imgUrl}" onerror="this.style.display='none'">`;
-  } else {
-    prev.innerHTML = '';
-  }
+async function del(id){
+  const a=DATA.find(x=>x.id===id);
+  if(!a||!confirm(`ลบ "${a.name}" ?\nไม่สามารถยกเลิกได้`))return;
+  await remove(id); toast('🗑️ ลบแล้ว'); refresh();
 }
 
-async function saveAssetForm() {
-  const asset = {
-    id: document.getElementById('fAssetId').value.trim(),
-    name: document.getElementById('fAssetName').value.trim(),
-    category: document.getElementById('fCategory').value,
-    building: document.getElementById('fBuilding').value,
-    room: document.getElementById('fRoom').value.trim(),
-    grade: document.getElementById('fGrade').value,
-    qty: parseInt(document.getElementById('fQty').value) || 1,
-    status: document.getElementById('fStatus').value,
-    brand: document.getElementById('fBrand').value.trim(),
-    serial: document.getElementById('fSerial').value.trim(),
-    year: document.getElementById('fYear').value.trim(),
-    note: document.getElementById('fNote').value.trim(),
-    imageUrl: document.getElementById('fImageUrl').value.trim(),
-  };
-
-  if (!asset.name || !asset.building || !asset.room) {
-    showToast('กรุณากรอกข้อมูลที่จำเป็น (ชื่อ, อาคาร, ห้อง)', 'error'); return;
-  }
-
-  const btn = document.getElementById('btnSaveAsset');
-  btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
-
-  try {
-    const res = await saveAsset(asset);
-    if (res.success !== false) {
-      showToast(STATE.editId ? '✅ แก้ไขสินทรัพย์เรียบร้อย' : '✅ เพิ่มสินทรัพย์เรียบร้อย', 'success');
-      closeModal();
-      await refreshAll();
-    } else {
-      showToast('เกิดข้อผิดพลาด: ' + (res.error || 'Unknown'), 'error');
-    }
-  } catch(e) {
-    showToast('ไม่สามารถบันทึกได้: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = '💾 บันทึก';
-  }
+// ── PAGE NAV ──
+function showPg(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const el=$('pg-'+name); if(el)el.classList.add('on');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.querySelector(`.ni[data-pg="${name}"]`)?.classList.add('on');
+  closeSb();
+}
+function setBc(t){ $('bc').textContent=t; }
+function closeSb(){
+  $('sb').classList.remove('open');
+  $('overlay').classList.remove('show');
 }
 
-async function confirmDelete(id) {
-  const a = STATE.assets.find(x => x.id === id);
-  if (!a) return;
-  if (!confirm(`ลบ "${a.name}" ออกจากระบบ?\nการกระทำนี้ไม่สามารถยกเลิกได้`)) return;
-  await deleteAsset(id);
-  await refreshAll();
-  showToast('🗑️ ลบสินทรัพย์แล้ว');
+function refresh(){
+  const pg=document.querySelector('.pg.on')?.id?.replace('pg-','');
+  if(pg==='dashboard')renderDash();
+  else if(pg==='assets')renderAssets();
+  else if(pg==='cats')renderCats();
+  else if(pg==='rooms')renderAllRooms();
+  else if(pg==='room'&&CROOM)goRoom(CBLD,CROOM,BLDG[CBLD]?.l||'');
+  updStats();
 }
 
-function editAsset(id) { openModal(id); }
-
-/* ===================== UTILS ===================== */
-
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + type + ' show';
-  setTimeout(() => t.classList.remove('show'), 3000);
+// ── TOAST ──
+function toast(msg,type='ok'){
+  const t=$('tst'); t.textContent=msg;
+  t.className='tst '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-async function refreshAll() {
-  await loadAssets();
-  const activePage = document.querySelector('.page.active')?.id?.replace('page-', '');
-  if (activePage === 'dashboard') renderDashboard();
-  else if (activePage === 'assets') renderAssetsTable();
-  else if (activePage === 'categories') renderCategories();
-  else if (activePage === 'rooms') renderAllRooms();
-  else if (activePage === 'room' && STATE.currentRoom) {
-    const bldLabel = BUILDING_COLORS[STATE.currentBuilding]?.label || '';
-    openRoom(STATE.currentBuilding, STATE.currentRoom, bldLabel);
-    return;
-  }
-  updateStatsBar();
-}
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',async()=>{
+  // Sidebar
+  $('mbtn').onclick=()=>{ $('sb').classList.add('open'); $('overlay').classList.add('show'); };
+  $('sbX').onclick=closeSb;
+  $('overlay').onclick=closeSb;
 
-function updateStatsBar() {
-  document.getElementById('totalAssets').textContent = STATE.assets.length.toLocaleString();
-  const rooms = new Set(STATE.assets.map(a => a.building + '|' + a.room));
-  document.getElementById('totalRooms').textContent = rooms.size;
-  const rep = STATE.assets.filter(a => a.status === 'ชำรุด' || a.status === 'รอซ่อม').length;
-  document.getElementById('totalRepair').textContent = rep;
-}
-
-/* ===================== SETTINGS ===================== */
-
-function initSettings() {
-  document.getElementById('settingSheetId').value = CONFIG.SHEET_ID;
-  document.getElementById('settingDriveId').value = CONFIG.DRIVE_FOLDER;
-  document.getElementById('settingGasUrl').value = CONFIG.GAS_URL;
-}
-
-function saveSettings() {
-  CONFIG.GAS_URL = document.getElementById('settingGasUrl').value.trim();
-  CONFIG.SHEET_ID = document.getElementById('settingSheetId').value.trim();
-  CONFIG.DRIVE_FOLDER = document.getElementById('settingDriveId').value.trim();
-  localStorage.setItem('gasUrl', CONFIG.GAS_URL);
-  localStorage.setItem('sheetId', CONFIG.SHEET_ID);
-  localStorage.setItem('driveId', CONFIG.DRIVE_FOLDER);
-  const s = document.getElementById('settingStatus');
-  s.className = 'status-msg ok';
-  s.textContent = '✅ บันทึกการตั้งค่าเรียบร้อย';
-  showToast('บันทึกการตั้งค่าแล้ว', 'success');
-  setTimeout(() => s.textContent = '', 3000);
-}
-
-/* ===================== EVENT LISTENERS ===================== */
-
-document.addEventListener('DOMContentLoaded', async () => {
-  // Sidebar toggle
-  const sidebar = document.getElementById('sidebar');
-  document.getElementById('sidebarToggle').addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
-  });
-  document.getElementById('menuBtn').addEventListener('click', () => {
-    sidebar.classList.toggle('mobile-open');
+  // Nav pages
+  document.querySelectorAll('.ni[data-pg]').forEach(el=>{
+    el.onclick=()=>{
+      const pg=el.dataset.pg;
+      showPg(pg);
+      setBc(el.querySelector('.ni-tx')?.textContent||pg);
+      if(pg==='dashboard')renderDash();
+      else if(pg==='assets'){renderAssets();}
+      else if(pg==='cats')renderCats();
+      else if(pg==='rooms')renderAllRooms();
+      else if(pg==='settings')initCfg();
+      else if(pg==='users')renderUsers();
+    };
   });
 
-  // Nav items
-  document.querySelectorAll('.nav-item[data-page]').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      const page = el.dataset.page;
-      showPage(page);
-      setBreadcrumb(el.querySelector('.nav-text')?.textContent || page);
-      if (page === 'dashboard') renderDashboard();
-      else if (page === 'assets') renderAssetsTable();
-      else if (page === 'categories') renderCategories();
-      else if (page === 'rooms') renderAllRooms();
-      else if (page === 'settings') initSettings();
-      else if (page === 'users') renderUsers();
-      sidebar.classList.remove('mobile-open');
-    });
-  });
-
-  // Building nav
-  document.querySelectorAll('.nav-item[data-building]').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      const bld = el.dataset.building;
-      STATE.currentBuilding = bld;
-      const assets = STATE.assets.filter(a => a.building === bld);
-      const rooms = {};
-      assets.forEach(a => {
-        if (!rooms[a.room]) rooms[a.room] = { room: a.room, grade: a.grade, count: 0 };
-        rooms[a.room].count++;
-      });
-      const grid = document.getElementById('buildingRoomsGrid');
-      const bldLabel = BUILDING_COLORS[bld]?.label || 'อาคาร ' + bld;
-      document.getElementById('buildingPageTitle').textContent = bldLabel;
-      grid.innerHTML = Object.values(rooms).map(r => `
-        <div class="room-card bldg-${bld}" onclick="openRoom('${bld}','${r.room}','${bldLabel}')">
-          <div class="room-number">ห้อง ${r.room}</div>
-          <div class="room-grade">${r.grade}</div>
-          <div class="room-asset-count">📦 ${r.count} รายการ</div>
-        </div>`).join('');
-      showPage('building');
-      setBreadcrumb(bldLabel);
-    });
+  // Nav buildings
+  document.querySelectorAll('.ni[data-bld]').forEach(el=>{
+    el.onclick=()=>goBld(el.dataset.bld);
   });
 
   // Grade filter
-  document.querySelectorAll('.filter-btn[data-grade]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn[data-grade]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      STATE.currentGradeFilter = btn.dataset.grade;
-      renderDashboard();
-    });
-  });
+  $('gf').onclick=e=>{
+    const btn=e.target.closest('.fb'); if(!btn)return;
+    document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on'); GF=btn.dataset.g; renderDash();
+  };
 
   // Asset filters
-  ['filterBuilding', 'filterCategory', 'filterStatus'].forEach(id => {
-    document.getElementById(id)?.addEventListener('change', () => {
-      renderAssetsTable(
-        document.getElementById('filterBuilding').value,
-        document.getElementById('filterCategory').value,
-        document.getElementById('filterStatus').value
-      );
-    });
-  });
+  ['fBld','fCat','fSt'].forEach(id=>$(id).addEventListener('change',renderAssets));
 
-  // Global search
-  document.getElementById('globalSearch').addEventListener('input', () => {
-    const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
-    if (activePage === 'assets') renderAssetsTable();
-    else { showPage('assets'); setBreadcrumb('รายการสินทรัพย์'); renderAssetsTable(); }
-  });
+  // Search
+  $('qsrch').addEventListener('input',()=>{ showPg('assets'); setBc('รายการสินทรัพย์'); renderAssets(); });
 
-  // Add asset buttons
-  ['btnAddAsset', 'btnAddAsset2', 'btnAddRoomAsset'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', () => openModal());
-  });
+  // Add buttons
+  $('btnAdd').onclick=()=>openModal();
+  $('btnAdd2').onclick=()=>openModal();
+  $('btnAdd3').onclick=()=>openModal();
 
   // Modal
-  document.getElementById('modalClose').addEventListener('click', closeModal);
-  document.getElementById('btnCancelModal').addEventListener('click', closeModal);
-  document.getElementById('btnSaveAsset').addEventListener('click', saveAssetForm);
-  document.getElementById('assetModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeModal();
-  });
+  $('mclose').onclick=closeModal;
+  $('mcancel').onclick=closeModal;
+  $('msave').onclick=saveAsset;
+  $('modal').onclick=e=>{if(e.target===$('modal'))closeModal();};
+  $('mImg').addEventListener('blur',()=>prvImg($('mImg').value));
 
-  // Image preview live
-  document.getElementById('fImageUrl').addEventListener('blur', () => {
-    updateImagePreview(document.getElementById('fImageUrl').value);
-  });
-
-  // Back buttons
-  document.getElementById('btnBackBuilding').addEventListener('click', () => {
-    showPage('dashboard'); setBreadcrumb('แดชบอร์ด'); renderDashboard();
-  });
-  document.getElementById('btnBackRoom').addEventListener('click', () => {
-    if (STATE.currentBuilding) {
-      document.querySelector(`[data-building="${STATE.currentBuilding}"]`)?.click();
-    } else {
-      showPage('dashboard'); setBreadcrumb('แดชบอร์ด');
-    }
-  });
+  // Back
+  $('bldBk').onclick=()=>{showPg('dashboard');setBc('แดชบอร์ด');renderDash();};
+  $('roomBk').onclick=()=>{if(CBLD)goBld(CBLD);else{showPg('dashboard');setBc('แดชบอร์ด');}};
 
   // Settings save
-  document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
+  $('btnSaveCfg').onclick=saveCfg;
 
-  // Load data & render
-  showToast('⏳ กำลังโหลดข้อมูล...');
-  await loadAssets();
-  renderDashboard();
-  showToast('✅ โหลดข้อมูลเรียบร้อย', 'success');
-});
-
-/* ===== USERS ===== */
-function renderUsers() {
-  const users = [
-    { name: 'ผู้ดูแลระบบหลัก', role: 'admin', initial: 'A', color: '#8B5CF6' },
-    { name: 'ครูอนุชา วงศ์สวัสดิ์', role: 'coadmin', initial: 'อ', color: '#3B82F6' },
-    { name: 'ครูสมหญิง ใจดี', role: 'coadmin', initial: 'ส', color: '#10B981' },
-  ];
-  document.getElementById('usersList').innerHTML = users.map(u => `
-    <div class="user-row">
-      <div class="user-row-avatar" style="background:${u.color}">${u.initial}</div>
-      <div>
-        <div class="user-row-name">${u.name}</div>
-        <div class="user-row-role">${u.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ช่วยดูแลระบบ'}</div>
-      </div>
-      <span class="role-chip role-${u.role}">${u.role === 'admin' ? 'Admin' : 'Co-Admin'}</span>
-    </div>`).join('');
-}
-
-/* ===== POPULATE CATEGORY FILTER ===== */
-setTimeout(() => {
-  const sel = document.getElementById('filterCategory');
-  Object.keys(CATEGORY_ICONS).forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    sel?.appendChild(opt);
+  // Populate cat filter
+  Object.keys(CATIC).forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c;o.textContent=c;
+    $('fCat').appendChild(o);
   });
-}, 100);
 
-</script>
-<script>
-// Override showPage to also close mobile sidebar
-const _origShowPage = typeof showPage !== 'undefined' ? showPage : null;
-// Patch nav items to close sidebar on mobile
-document.querySelectorAll('.nav-item').forEach(el=>{
-  el.addEventListener('click', ()=> closeSidebarMobile(), true);
+  // Load
+  toast('⏳ กำลังโหลดข้อมูล...');
+  await load();
+  renderDash();
+  toast('✅ โหลดข้อมูลเรียบร้อย','ok');
 });
 </script>
 </body>
