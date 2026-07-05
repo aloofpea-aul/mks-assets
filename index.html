@@ -301,7 +301,20 @@ textarea.fi{resize:vertical;min-height:60px}
 .sum-card{background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--sh);text-align:center}
 .sum-val{font-size:22px;font-weight:800;color:var(--navy)}
 .sum-lbl{font-size:11px;color:var(--g400);margin-top:3px}
+
+/* GOOGLE DRIVE UPLOAD */
+.gdrive-btn{display:flex;align-items:center;gap:8px;background:#fff;
+  border:2px solid var(--g200);border-radius:var(--r);padding:16px;
+  cursor:pointer;transition:all .2s;width:100%;justify-content:center;
+  font-family:var(--f);font-size:14px;font-weight:600;color:var(--g600)}
+.gdrive-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--g50)}
+.gdrive-btn .gdrive-icon{font-size:24px}
+.upload-status{margin-top:8px;font-size:12px;color:var(--g400);text-align:center}
+.upload-status.uploading{color:var(--amber)}
+.upload-status.done{color:var(--green)}
+.upload-status.fail{color:var(--red)}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -530,13 +543,14 @@ textarea.fi{resize:vertical;min-height:60px}
       </div>
       <div class="fg">
         <label>รูปภาพ</label>
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imgFile').click()">
-          <input type="file" id="imgFile" accept="image/*" capture="environment" style="display:none">
-          <div class="upload-icon">📷</div>
-          <div class="upload-text">แตะเพื่ออัปโหลดรูปจากมือถือ หรือวาง URL ด้านล่าง</div>
-        </div>
-        <input class="fi" id="mImg" placeholder="หรือวาง Google Drive URL ที่นี่" style="margin-top:8px">
-        <span class="fhint">📎 อัปโหลดรูปโดยตรง หรือแชร์ไฟล์จาก Google Drive</span>
+        <button type="button" class="gdrive-btn" id="driveUploadBtn" onclick="startDriveUpload()">
+          <span class="gdrive-icon">📷</span>
+          <span id="driveUploadLabel">เลือกรูป / ถ่ายรูป → บันทึกลง Google Drive</span>
+        </button>
+        <input type="file" id="imgFile" accept="image/*" capture="environment" style="display:none">
+        <div class="upload-status" id="uploadStatus"></div>
+        <input class="fi" id="mImg" placeholder="หรือวาง Google Drive URL โดยตรง" style="margin-top:8px">
+        <span class="fhint">📎 กดปุ่มด้านบนเพื่ออัปโหลดอัตโนมัติ หรือวาง Link จาก Google Drive</span>
       </div>
       <div class="ipv" id="ipv"></div>
     </div>
@@ -1272,6 +1286,135 @@ function fileToBase64(file){
     r.onerror=reject;
     r.readAsDataURL(file);
   });
+}
+
+
+// ============================================================
+//  GOOGLE DRIVE UPLOAD via Google Identity Services
+// ============================================================
+const GDRIVE_CLIENT_ID = '778608011924-0lpu5mftbi8t7qcebmlac445pfs8fflj.apps.googleusercontent.com';
+const GDRIVE_FOLDER_ID = '1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
+let gdriveToken = null;
+let gdriveTokenExpiry = 0;
+
+function startDriveUpload(){
+  // Trigger file picker first
+  document.getElementById('imgFile').click();
+}
+
+// Listen for file selection
+document.addEventListener('DOMContentLoaded', function(){
+  const inp = document.getElementById('imgFile');
+  if(inp){
+    inp.addEventListener('change', async function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('ipv').innerHTML = 
+          `<img src="${ev.target.result}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px">`;
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload to Google Drive
+      await uploadToDrive(file);
+    });
+  }
+});
+
+async function getGdriveToken(){
+  // Check if token still valid
+  if(gdriveToken && Date.now() < gdriveTokenExpiry){
+    return gdriveToken;
+  }
+  
+  return new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE_CLIENT_ID,
+      scope: GDRIVE_SCOPE,
+      callback: (response) => {
+        if(response.error){ reject(response.error); return; }
+        gdriveToken = response.access_token;
+        gdriveTokenExpiry = Date.now() + (response.expires_in * 1000) - 60000;
+        resolve(gdriveToken);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
+async function uploadToDrive(file){
+  const statusEl = document.getElementById('uploadStatus');
+  const labelEl = document.getElementById('driveUploadLabel');
+  
+  statusEl.className = 'upload-status uploading';
+  statusEl.textContent = '⏳ กำลังเชื่อมต่อ Google Drive...';
+  
+  try{
+    const token = await getGdriveToken();
+    
+    statusEl.textContent = '📤 กำลังอัปโหลดรูปภาพ...';
+    
+    // Create metadata
+    const assetId = document.getElementById('mId').value || 'asset';
+    const fileName = assetId + '-' + Date.now() + '.' + file.name.split('.').pop();
+    const metadata = {
+      name: fileName,
+      parents: [GDRIVE_FOLDER_ID]
+    };
+    
+    // Upload using multipart
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+    form.append('file', file);
+    
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: form
+      }
+    );
+    
+    if(!res.ok) throw new Error('Upload failed: ' + res.status);
+    
+    const data = await res.json();
+    const fileId = data.id;
+    
+    // Make file public
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    
+    // Set URL
+    const viewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+    const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+    
+    document.getElementById('mImg').value = viewUrl;
+    document.getElementById('ipv').innerHTML = 
+      `<img src="${thumbUrl}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px" onerror="this.style.display='none'">`;
+    
+    statusEl.className = 'upload-status done';
+    statusEl.textContent = '✅ อัปโหลดสำเร็จ! รูปบันทึกใน Google Drive แล้ว';
+    labelEl.textContent = '📷 เปลี่ยนรูป';
+    toast('✅ อัปโหลดรูปสำเร็จ', 'ok');
+    
+  } catch(err) {
+    console.error(err);
+    statusEl.className = 'upload-status fail';
+    statusEl.textContent = '❌ อัปโหลดไม่สำเร็จ กรุณาลองใหม่';
+    toast('อัปโหลดไม่สำเร็จ: ' + err.message, 'er');
+  }
 }
 
 </script>
