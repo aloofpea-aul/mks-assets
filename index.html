@@ -522,15 +522,26 @@ function sample(){
 }
 
 // ── DATA ──
+function loadJsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb='_cb'+Date.now();
+    const sc=document.createElement('script');
+    window[cb]=function(data){resolve(data);delete window[cb];sc.remove();};
+    sc.onerror=()=>{reject(new Error('fail'));delete window[cb];sc.remove();};
+    sc.src=url+'?action=getAssets&callback='+cb;
+    document.head.appendChild(sc);
+    setTimeout(()=>{if(window[cb]){reject(new Error('timeout'));delete window[cb];sc.remove();}},10000);
+  });
+}
 async function load(){
   const url=gasUrl();
   if(url){
     try{
-      const r=await fetch(url+'?action=getAssets');
-      const j=await r.json();
-      if(j.data&&j.data.length) DATA=j.data; else DATA=sample();
-    }catch(e){if(!DATA.length)DATA=sample();}
-  } else { if(!DATA.length) DATA=sample(); }
+      const j=await loadJsonp(url);
+      if(j&&j.data&&j.data.length){DATA=j.data;return;}
+    }catch(e){console.warn('JSONP:',e);}
+  }
+  if(!DATA.length)DATA=sample();
 }
 function gasPost(payload){
   const url=gasUrl(); if(!url) return Promise.resolve({success:true});
