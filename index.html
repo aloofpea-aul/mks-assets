@@ -532,21 +532,24 @@ async function load(){
     }catch(e){if(!DATA.length)DATA=sample();}
   } else { if(!DATA.length) DATA=sample(); }
 }
+function gasPost(payload){
+  const url=gasUrl(); if(!url) return Promise.resolve({success:true});
+  // ใช้ no-cors fetch สำหรับ POST (GAS รับได้ แต่ response จะเป็น opaque)
+  return fetch(url,{method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload)}).catch(()=>{});
+}
 async function persist(asset){
   const url=gasUrl();
   if(url){
-    try{
-      await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:EDIT?'updateAsset':'addAsset',data:asset})});
-    }catch(e){}
+    try{ await gasPost({action:EDIT?'updateAsset':'addAsset',data:asset}); }catch(e){}
   }
   if(EDIT){const i=DATA.findIndex(a=>a.id===EDIT);if(i>-1)DATA[i]={...asset,id:EDIT};}
   else{asset.id='KBI-'+Date.now();DATA.push(asset);}
 }
 async function remove(id){
   const url=gasUrl();
-  if(url){try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'deleteAsset',id})});}catch(e){}}
+  if(url){try{ await gasPost({action:'deleteAsset',id}); }catch(e){}}
   DATA=DATA.filter(a=>a.id!==id);
 }
 
