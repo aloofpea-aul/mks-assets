@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบสินทรัพย์ — โรงเรียนเมืองกระบี่</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B2B5E;--navy2:#243571;--gold:#F5A623;--gold2:#FFD87A;
+  --w:#fff;--g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;
+  --g400:#94A3B8;--g600:#475569;--g800:#1E293B;
+  --blue:#3B82F6;--green:#10B981;--amber:#F59E0B;--red:#EF4444;
+  --sw:240px;--th:60px;--r:12px;--r2:8px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --sh2:0 8px 32px rgba(0,0,0,.14);
+  --f:'Sarabun',sans-serif;
+}
+body{font-family:var(--f);background:var(--g50);color:var(--g800);
+  display:flex;min-height:100vh;font-size:15px;line-height:1.6;overflow-x:hidden}
+
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,.45);cursor:pointer}
+#overlay.show{display:block}
+
+/* SIDEBAR */
+.sb{width:var(--sw);background:var(--navy);color:#fff;
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:200;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.sb-hd{display:flex;align-items:center;justify-content:space-between;
+  padding:14px;border-bottom:1px solid rgba(255,255,255,.1);min-height:68px}
+.sb-logo{display:flex;align-items:center;gap:10px;overflow:hidden}
+.sb-icon{font-size:26px;flex-shrink:0}
+.sb-name{display:flex;flex-direction:column}
+.sb-title{font-weight:800;font-size:13px;color:var(--gold2)}
+.sb-sub{font-size:11px;opacity:.6}
+.sb-x{background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;
+  cursor:pointer;padding:6px;border-radius:6px;flex-shrink:0}
+.sb-x:hover{background:rgba(255,255,255,.12);color:#fff}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nlbl{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(255,255,255,.35);padding:10px 16px 3px}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 16px;
+  color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;
+  transition:all .15s;position:relative;user-select:none}
+.ni:hover{background:rgba(255,255,255,.1);color:#fff}
+.ni.on{background:var(--gold);color:var(--navy);font-weight:700}
+.ni.on::before{content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--gold2);border-radius:0 2px 2px 0}
+.ni-ic{font-size:17px;flex-shrink:0;width:22px;text-align:center}
+.ni-tx{font-size:14px}
+.bdot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.sb-ft{border-top:1px solid rgba(255,255,255,.1);padding:12px 14px}
+.usr{display:flex;align-items:center;gap:10px}
+.uav{width:34px;height:34px;background:var(--gold);color:var(--navy);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;flex-shrink:0}
+.unm{display:block;font-size:13px;font-weight:600;color:#fff}
+.url{display:block;font-size:11px;color:rgba(255,255,255,.5)}
+
+/* MAIN */
+.mn{flex:1;display:flex;flex-direction:column;min-height:100vh;margin-left:var(--sw);transition:margin-left .28s}
+
+/* TOPBAR */
+.tb{height:var(--th);background:#fff;border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;position:sticky;top:0;z-index:100;gap:10px}
+.tb-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.tb-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mbtn{background:none;border:none;font-size:22px;cursor:pointer;
+  color:var(--g600);padding:6px;border-radius:6px}
+.mbtn:hover{background:var(--g100)}
+.bc{font-size:14px;color:var(--g600);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch{display:flex;align-items:center;gap:7px;background:var(--g100);
+  border:1.5px solid var(--g200);border-radius:8px;padding:6px 11px;flex:1;max-width:220px}
+.srch input{border:none;background:none;outline:none;font-family:var(--f);font-size:13px;width:100%;color:var(--g800)}
+
+/* BUTTONS */
+.bp{background:var(--navy);color:#fff;border:none;border-radius:var(--r2);
+  padding:8px 16px;font-family:var(--f);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;white-space:nowrap}
+.bp:hover{background:var(--navy2);box-shadow:0 4px 12px rgba(27,43,94,.25)}
+.bp:active{transform:scale(.97)}
+.bs{background:#fff;color:var(--g600);border:1.5px solid var(--g200);
+  border-radius:var(--r2);padding:7px 14px;font-family:var(--f);font-size:13px;cursor:pointer}
+.bs:hover{background:var(--g100)}
+.bbk{background:none;border:none;color:var(--navy);font-size:14px;font-weight:700;
+  cursor:pointer;padding:4px 8px;font-family:var(--f);flex-shrink:0}
+.bic{background:none;border:none;cursor:pointer;padding:4px 7px;
+  border-radius:6px;font-size:15px;transition:background .15s}
+.bic:hover{background:var(--g100)}
+
+/* PAGES */
+.pg{display:none;padding:18px 14px 60px;animation:fi .2s ease}
+.pg.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.ph h1{font-size:20px;font-weight:800;color:var(--navy);flex:1}
+.psub{color:var(--g400);font-size:13px;width:100%;margin-top:-13px}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.sc{background:#fff;border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;box-shadow:var(--sh);
+  border-left:4px solid transparent;transition:transform .2s}
+.sc:hover{transform:translateY(-2px)}
+.sc.sb_{border-left-color:var(--blue)}
+.sc.sg_{border-left-color:var(--green)}
+.sc.sy_{border-left-color:var(--amber)}
+.sc.sr_{border-left-color:var(--red)}
+.sic{font-size:24px}
+.sv{display:block;font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+.sl{display:block;font-size:11px;color:var(--g400);margin-top:3px;font-weight:500}
+
+/* SECTION HDR */
+.sechd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sechd h2{font-size:15px;font-weight:700;color:var(--navy)}
+.gf{display:flex;gap:5px;flex-wrap:wrap}
+.fb{padding:4px 11px;border-radius:20px;border:1.5px solid var(--g200);
+  background:#fff;color:var(--g600);font-family:var(--f);font-size:12px;cursor:pointer;transition:all .15s}
+.fb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.fb:hover:not(.on){border-color:var(--navy);color:var(--navy)}
+
+/* BUILDINGS */
+.bcon{display:flex;flex-direction:column;gap:18px}
+.btit{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.bbdg{display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:8px;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+.bnm{font-size:15px;font-weight:700;color:var(--g800)}
+.bcnt{font-size:12px;color:var(--g400);margin-left:auto}
+.rrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+
+/* ROOM CARD */
+.rc{background:#fff;border-radius:var(--r);padding:14px;cursor:pointer;
+  box-shadow:var(--sh);border:2px solid transparent;
+  transition:all .2s;position:relative;overflow:hidden}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.rc.bA::before{background:var(--blue)}
+.rc.bB::before{background:var(--green)}
+.rc.bC::before{background:var(--amber)}
+.rc.bD::before{background:var(--red)}
+.rc:hover{transform:translateY(-2px);box-shadow:var(--sh2);border-color:var(--navy)}
+.rnum{font-size:15px;font-weight:800;color:var(--navy)}
+.rgrd{font-size:11px;color:var(--g400);margin:2px 0 8px}
+.rac{display:inline-flex;align-items:center;gap:4px;background:var(--g100);
+  border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--g600)}
+.rdot{position:absolute;top:11px;right:11px;width:8px;height:8px;border-radius:50%}
+
+/* TABLE */
+.tlbr{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.frow{display:flex;gap:7px;flex-wrap:wrap}
+.si,.fi{border:1.5px solid var(--g200);border-radius:var(--r2);
+  padding:7px 10px;font-family:var(--f);font-size:13px;color:var(--g800);
+  background:#fff;outline:none;transition:border-color .15s}
+.si:focus,.fi:focus{border-color:var(--navy)}
+textarea.fi{resize:vertical;min-height:60px}
+.tw{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:auto}
+.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
+.dt th{background:var(--g50);color:var(--g600);font-weight:700;font-size:11px;
+  letter-spacing:.04em;text-transform:uppercase;padding:11px 13px;
+  text-align:left;border-bottom:1px solid var(--g200);white-space:nowrap}
+.dt td{padding:11px 13px;border-bottom:1px solid var(--g100)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:var(--g50)}
+.erow{text-align:center;color:var(--g400);padding:32px!important}
+.stb{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.s-ดี{background:#D1FAE5;color:#065F46}
+.s-ชำรุด{background:#FEE2E2;color:#991B1B}
+.s-รอซ่อม{background:#FEF3C7;color:#92400E}
+.s-จำหน่าย{background:var(--g100);color:var(--g600)}
+
+/* CATEGORIES */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:13px}
+.ccard{background:#fff;border-radius:var(--r);padding:22px 14px;
+  box-shadow:var(--sh);text-align:center;cursor:pointer;transition:transform .2s}
+.ccard:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
+.ccic{font-size:32px;margin-bottom:8px}
+.ccnm{font-size:14px;font-weight:700;color:var(--navy)}
+.cccnt{font-size:12px;color:var(--g400);margin-top:3px}
+
+/* ROOM STATS */
+.rstats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.rsc{background:#fff;border-radius:8px;padding:9px 13px;
+  box-shadow:var(--sh);font-size:12px;display:flex;align-items:center;gap:7px}
+.rsc strong{font-size:17px;font-weight:800;color:var(--navy)}
+
+/* SETTINGS */
+.setcard{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh);max-width:500px}
+.setcard h3{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--navy)}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--g600);margin-bottom:5px}
+.fg .fi{width:100%}
+.fhint{font-size:11px;color:var(--g400);margin-top:4px;display:block}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.smsg{margin-top:10px;font-size:13px;font-weight:600}
+.smsg.ok{color:var(--green)}.smsg.err{color:var(--red)}
+
+/* USERS */
+.ulist{display:flex;flex-direction:column;gap:8px;max-width:480px}
+.urow{background:#fff;border-radius:var(--r);padding:13px 15px;
+  box-shadow:var(--sh);display:flex;align-items:center;gap:12px}
+.urav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+.urnm{font-weight:600;font-size:13px}
+.urrl{font-size:11px;color:var(--g400)}
+.rchip{margin-left:auto;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0}
+.r-admin{background:#EDE9FE;color:#5B21B6}
+.r-co{background:#D1FAE5;color:#065F46}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:14px}
+.mo.open{display:flex}
+.mdl{background:#fff;border-radius:16px;width:100%;max-width:540px;
+  max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--sh2);
+  animation:mi .22s ease}
+@keyframes mi{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.mhd{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 13px;border-bottom:1px solid var(--g100)}
+.mhd h3{font-size:16px;font-weight:800;color:var(--navy)}
+.mx{background:none;border:none;font-size:18px;cursor:pointer;
+  color:var(--g400);padding:4px 8px;border-radius:6px}
+.mx:hover{background:var(--g100)}
+.mbd{padding:16px 20px;overflow-y:auto;flex:1}
+.mft{display:flex;justify-content:flex-end;gap:9px;padding:13px 20px;border-top:1px solid var(--g100)}
+.ipv{margin-top:8px;border-radius:8px;overflow:hidden;max-height:130px}
+.ipv img{width:100%;object-fit:cover;border-radius:8px}
+
+/* TOAST */
+.tst{position:fixed;bottom:20px;right:14px;z-index:999;
+  background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;
+  font-size:13px;font-weight:500;box-shadow:var(--sh2);
+  transform:translateY(70px);opacity:0;
+  transition:all .28s cubic-bezier(.34,1.56,.64,1);pointer-events:none;max-width:280px}
+.tst.show{transform:translateY(0);opacity:1}
+.tst.ok{border-left:4px solid var(--green)}
+.tst.er{border-left:4px solid var(--red)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sb{transform:translateX(-100%)}
+  .sb.open{transform:translateX(0)}
+  .mn{margin-left:0!important}
+  .srch{display:none}
+  .sg{grid-template-columns:1fr 1fr}
+  .pg{padding:14px 12px 60px}
+  .fr{grid-template-columns:1fr}
+}
+@media(min-width:769px){
+  .sg{grid-template-columns:repeat(4,1fr)}
+  .rrow{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .pg{padding:22px 22px 60px}
+}
+</style>
+</head>
+<body>
+
+<div id="overlay"></div>
+
+<aside class="sb" id="sb">
+  <div class="sb-hd">
+    <div class="sb-logo">
+      <div class="sb-icon">🏫</div>
+      <div class="sb-name">
+        <span class="sb-title">รร.เมืองกระบี่</span>
+        <span class="sb-sub">ระบบสินทรัพย์</span>
+      </div>
+    </div>
+    <button class="sb-x" id="sbX">✕</button>
+  </div>
+  <nav class="sb-nav">
+    <div><span class="nlbl">ภาพรวม</span>
+      <div class="ni on" data-pg="dashboard"><span class="ni-ic">📊</span><span class="ni-tx">แดชบอร์ด</span></div>
+    </div>
+    <div><span class="nlbl">สินทรัพย์</span>
+      <div class="ni" data-pg="assets"><span class="ni-ic">📦</span><span class="ni-tx">รายการสินทรัพย์</span></div>
+      <div class="ni" data-pg="cats"><span class="ni-ic">🏷️</span><span class="ni-tx">ประเภทสินทรัพย์</span></div>
+      <div class="ni" data-pg="rooms"><span class="ni-ic">🚪</span><span class="ni-tx">ห้องเรียนทั้งหมด</span></div>
+    </div>
+    <div><span class="nlbl">อาคาร</span>
+      <div class="ni" data-bld="A"><span class="bdot" style="background:#3B82F6"></span><span class="ni-tx">อาคาร A</span></div>
+      <div class="ni" data-bld="B"><span class="bdot" style="background:#10B981"></span><span class="ni-tx">อาคาร B</span></div>
+      <div class="ni" data-bld="C"><span class="bdot" style="background:#F59E0B"></span><span class="ni-tx">อาคาร C</span></div>
+      <div class="ni" data-bld="D"><span class="bdot" style="background:#EF4444"></span><span class="ni-tx">อาคาร D</span></div>
+    </div>
+    <div><span class="nlbl">ระบบ</span>
+      <div class="ni" data-pg="settings"><span class="ni-ic">⚙️</span><span class="ni-tx">ตั้งค่า</span></div>
+      <div class="ni" data-pg="users"><span class="ni-ic">👥</span><span class="ni-tx">ผู้ดูแลระบบ</span></div>
+    </div>
+  </nav>
+  <div class="sb-ft">
+    <div class="usr">
+      <div class="uav">A</div>
+      <div><span class="unm">Admin</span><span class="url">ผู้ดูแลระบบ</span></div>
+    </div>
+  </div>
+</aside>
+
+<main class="mn">
+  <header class="tb">
+    <div class="tb-l">
+      <button class="mbtn" id="mbtn">☰</button>
+      <span class="bc" id="bc">แดชบอร์ด</span>
+    </div>
+    <div class="tb-r">
+      <div class="srch">
+        <span style="color:var(--g400)">🔍</span>
+        <input type="text" placeholder="ค้นหาสินทรัพย์..." id="qsrch">
+      </div>
+      <button class="bp" id="btnAdd">+ เพิ่ม</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <div class="pg on" id="pg-dashboard">
+    <div class="ph">
+      <h1>ภาพรวมสินทรัพย์</h1>
+      <p class="psub">โรงเรียนเมืองกระบี่ — ปีการศึกษา 2568</p>
+    </div>
+    <div class="sg">
+      <div class="sc sb_"><div class="sic">📦</div><div><span class="sv" id="st0">—</span><span class="sl">สินทรัพย์ทั้งหมด</span></div></div>
+      <div class="sc sg_"><div class="sic">🚪</div><div><span class="sv" id="st1">—</span><span class="sl">ห้องเรียน</span></div></div>
+      <div class="sc sy_"><div class="sic">🏫</div><div><span class="sv" id="st2">4</span><span class="sl">อาคาร</span></div></div>
+      <div class="sc sr_"><div class="sic">⚠️</div><div><span class="sv" id="st3">—</span><span class="sl">รอซ่อมบำรุง</span></div></div>
+    </div>
+    <div class="sechd">
+      <h2>อาคารและห้องเรียน</h2>
+      <div class="gf" id="gf">
+        <button class="fb on" data-g="all">ทั้งหมด</button>
+        <button class="fb" data-g="ม.1">ม.1</button>
+        <button class="fb" data-g="ม.2">ม.2</button>
+        <button class="fb" data-g="ม.3">ม.3</button>
+        <button class="fb" data-g="ม.4">ม.4</button>
+        <button class="fb" data-g="ม.5">ม.5</button>
+        <button class="fb" data-g="ม.6">ม.6</button>
+      </div>
+    </div>
+    <div class="bcon" id="bcon"></div>
+  </div>
+
+  <!-- ASSETS -->
+  <div class="pg" id="pg-assets">
+    <div class="ph">
+      <h1>รายการสินทรัพย์</h1>
+      <button class="bp" id="btnAdd2">+ เพิ่มสินทรัพย์</button>
+    </div>
+    <div class="tlbr">
+      <div class="frow">
+        <select class="si" id="fBld"><option value="">ทุกอาคาร</option><option value="A">อาคาร A</option><option value="B">อาคาร B</option><option value="C">อาคาร C</option><option value="D">อาคาร D</option></select>
+        <select class="si" id="fCat"><option value="">ทุกประเภท</option></select>
+        <select class="si" id="fSt"><option value="">ทุกสถานะ</option><option>ดี</option><option>ชำรุด</option><option>รอซ่อม</option><option>จำหน่าย</option></select>
+      </div>
+    </div>
+    <div class="tw">
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+      <tbody id="atb"><tr><td colspan="7" class="erow">⏳ กำลังโหลด...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="pg" id="pg-cats">
+    <div class="ph"><h1>ประเภทสินทรัพย์</h1></div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+
+  <!-- ALL ROOMS -->
+  <div class="pg" id="pg-rooms">
+    <div class="ph"><h1>ห้องเรียนทั้งหมด</h1></div>
+    <div class="rrow" id="allrooms"></div>
+  </div>
+
+  <!-- BUILDING -->
+  <div class="pg" id="pg-bld">
+    <div class="ph">
+      <button class="bbk" id="bldBk">← กลับ</button>
+      <h1 id="bldTitle">อาคาร</h1>
+    </div>
+    <div class="rrow" id="bldrooms"></div>
+  </div>
+
+  <!-- ROOM -->
+  <div class="pg" id="pg-room">
+    <div class="ph">
+      <button class="bbk" id="roomBk">← กลับ</button>
+      <h1 id="roomTitle">ห้องเรียน</h1>
+      <button class="bp" id="btnAdd3">+ เพิ่ม</button>
+    </div>
+    <div class="rstats" id="rstats"></div>
+    <div class="tw">
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>จำนวน</th><th>สถานะ</th><th>รูป</th><th>จัดการ</th></tr></thead>
+      <tbody id="rtb"><tr><td colspan="7" class="erow">ไม่มีข้อมูล</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="pg" id="pg-settings">
+    <div class="ph"><h1>ตั้งค่าระบบ</h1></div>
+    <div class="setcard">
+      <h3>🔗 เชื่อมต่อ Google Sheets + GAS</h3>
+      <div class="fg"><label>Google Apps Script URL</label>
+        <input class="fi" id="cfgGas" placeholder="https://script.google.com/macros/s/...">
+        <span class="fhint">Deploy GAS เป็น Web App แล้ววาง URL ที่นี่</span></div>
+      <div class="fg"><label>Spreadsheet ID</label>
+        <input class="fi" id="cfgSheet" placeholder="10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw"></div>
+      <div class="fg"><label>Google Drive Folder ID</label>
+        <input class="fi" id="cfgDrive" placeholder="1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW"></div>
+      <button class="bp" id="btnSaveCfg">💾 บันทึกการตั้งค่า</button>
+      <div class="smsg" id="cfgMsg"></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="pg" id="pg-users">
+    <div class="ph"><h1>ผู้ดูแลระบบ</h1></div>
+    <div class="ulist" id="ulist"></div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="mo" id="modal">
+  <div class="mdl">
+    <div class="mhd">
+      <h3 id="mtitle">เพิ่มสินทรัพย์</h3>
+      <button class="mx" id="mclose">✕</button>
+    </div>
+    <div class="mbd">
+      <div class="fr">
+        <div class="fg"><label>รหัสสินทรัพย์</label><input class="fi" id="mId" placeholder="KBI-A101-001"></div>
+        <div class="fg"><label>ชื่อสินทรัพย์ *</label><input class="fi" id="mName" placeholder="เช่น คอมพิวเตอร์ Dell"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>ประเภท *</label>
+          <select class="fi" id="mCat">
+            <option value="">เลือกประเภท</option>
+            <option>อุปกรณ์ไอที</option><option>อุปกรณ์การสอน</option>
+            <option>เฟอร์นิเจอร์</option><option>ครุภัณฑ์สำนักงาน</option><option>อื่น ๆ</option>
+          </select></div>
+        <div class="fg"><label>อาคาร *</label>
+          <select class="fi" id="mBld">
+            <option value="">เลือกอาคาร</option>
+            <option value="A">อาคาร A</option><option value="B">อาคาร B</option>
+            <option value="C">อาคาร C</option><option value="D">อาคาร D</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>ห้อง *</label><input class="fi" id="mRoom" placeholder="เช่น 101"></div>
+        <div class="fg"><label>ระดับชั้น</label>
+          <select class="fi" id="mGrd">
+            <option value="">เลือกระดับ</option>
+            <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            <option>ม.4</option><option>ม.5</option><option>ม.6</option><option>ห้องพิเศษ</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>จำนวน</label><input class="fi" type="number" id="mQty" value="1" min="1"></div>
+        <div class="fg"><label>สถานะ</label>
+          <select class="fi" id="mSt">
+            <option>ดี</option><option>ชำรุด</option><option>รอซ่อม</option><option>จำหน่าย</option>
+          </select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>ยี่ห้อ/รุ่น</label><input class="fi" id="mBrand" placeholder="เช่น Dell Optiplex"></div>
+        <div class="fg"><label>หมายเลขครุภัณฑ์</label><input class="fi" id="mSerial" placeholder="ทะเบียนครุภัณฑ์"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>ปีที่ได้มา</label><input class="fi" id="mYear" placeholder="เช่น 2565"></div>
+        <div class="fg"><label>หมายเหตุ</label><input class="fi" id="mNote" placeholder="รายละเอียดเพิ่มเติม"></div>
+      </div>
+      <div class="fg">
+        <label>รูปภาพ (Google Drive Link)</label>
+        <input class="fi" id="mImg" placeholder="วาง URL รูปจาก Google Drive">
+        <span class="fhint">📎 แชร์ไฟล์รูป → Copy Link แล้ววางที่นี่</span>
+      </div>
+      <div class="ipv" id="ipv"></div>
+    </div>
+    <div class="mft">
+      <button class="bs" id="mcancel">ยกเลิก</button>
+      <button class="bp" id="msave">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="tst" id="tst"></div>
+
+<script>
+'use strict';
+// ── CONFIG ──
+const BLDG = {A:{c:'#3B82F6',l:'อาคาร A'},B:{c:'#10B981',l:'อาคาร B'},C:{c:'#F59E0B',l:'อาคาร C'},D:{c:'#EF4444',l:'อาคาร D'}};
+const CATIC = {'อุปกรณ์ไอที':'💻','อุปกรณ์การสอน':'📐','เฟอร์นิเจอร์':'🪑','ครุภัณฑ์สำนักงาน':'🗄️','อื่น ๆ':'📦'};
+let DATA=[], EDIT=null, CBLD=null, CROOM=null, GF='all';
+
+const gasUrl=()=>localStorage.getItem('gasUrl')||'';
+const $=id=>document.getElementById(id);
+
+// ── SAMPLE ──
+function sample(){
+  const defs=[
+    {b:'A',r:'101',g:'ม.1'},{b:'A',r:'102',g:'ม.1'},{b:'A',r:'103',g:'ม.2'},
+    {b:'B',r:'201',g:'ม.3'},{b:'B',r:'202',g:'ม.3'},{b:'B',r:'203',g:'ม.4'},
+    {b:'C',r:'301',g:'ม.5'},{b:'C',r:'302',g:'ม.6'},
+    {b:'D',r:'401',g:'ม.6'},{b:'D',r:'คอม',g:'ห้องพิเศษ'},
+  ];
+  const its=[['คอมพิวเตอร์ Dell','อุปกรณ์ไอที'],['โปรเจกเตอร์ Epson','อุปกรณ์ไอที'],
+    ['โต๊ะนักเรียน','เฟอร์นิเจอร์'],['เก้าอี้นักเรียน','เฟอร์นิเจอร์'],
+    ['กระดานไวท์บอร์ด','อุปกรณ์การสอน'],['ทีวี Samsung','อุปกรณ์ไอที'],
+    ['พัดลม','ครุภัณฑ์สำนักงาน'],['ตู้ล็อคเกอร์','เฟอร์นิเจอร์']];
+  const sts=['ดี','ดี','ดี','ดี','ชำรุด','รอซ่อม'];
+  let n=1,out=[];
+  defs.forEach(d=>{
+    for(let i=0;i<3+Math.floor(Math.random()*3);i++){
+      const [nm,cat]=its[Math.floor(Math.random()*its.length)];
+      out.push({id:`KBI-${d.b}${d.r.replace(/\D/g,'').padStart(3,'0')}-${String(n++).padStart(3,'0')}`,
+        name:nm,category:cat,building:d.b,room:d.r,grade:d.g,
+        qty:cat==='เฟอร์นิเจอร์'?35:1,status:sts[Math.floor(Math.random()*sts.length)],
+        brand:'',serial:'',year:'',note:'',imageUrl:''});
+    }
+  });
+  return out;
+}
+
+// ── DATA ──
+async function load(){
+  const url=gasUrl();
+  if(url){
+    try{
+      const r=await fetch(url+'?action=getAssets');
+      const j=await r.json();
+      if(j.data&&j.data.length) DATA=j.data; else DATA=sample();
+    }catch(e){if(!DATA.length)DATA=sample();}
+  } else { if(!DATA.length) DATA=sample(); }
+}
+function gasPost(payload){
+  const url=gasUrl(); if(!url) return Promise.resolve({success:true});
+  // ใช้ no-cors fetch สำหรับ POST (GAS รับได้ แต่ response จะเป็น opaque)
+  return fetch(url,{method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload)}).catch(()=>{});
+}
+async function persist(asset){
+  const url=gasUrl();
+  if(url){
+    try{ await gasPost({action:EDIT?'updateAsset':'addAsset',data:asset}); }catch(e){}
+  }
+  if(EDIT){const i=DATA.findIndex(a=>a.id===EDIT);if(i>-1)DATA[i]={...asset,id:EDIT};}
+  else{asset.id='KBI-'+Date.now();DATA.push(asset);}
+}
+async function remove(id){
+  const url=gasUrl();
+  if(url){try{ await gasPost({action:'deleteAsset',id}); }catch(e){}}
+  DATA=DATA.filter(a=>a.id!==id);
+}
+
+// ── STATS ──
+function updStats(data){
+  $(data?'st0':'st0').textContent=(data||DATA).length.toLocaleString();
+  const rms=new Set((data||DATA).map(a=>a.building+'|'+a.room));
+  $('st1').textContent=rms.size;
+  $('st3').textContent=(data||DATA).filter(a=>a.status==='ชำรุด'||a.status==='รอซ่อม').length;
+}
+
+// ── DASHBOARD ──
+function renderDash(){
+  let data=GF==='all'?[...DATA]:DATA.filter(a=>a.grade===GF);
+  updStats(data);
+  const byB={};
+  data.forEach(a=>{
+    if(!byB[a.building])byB[a.building]={};
+    if(!byB[a.building][a.room])byB[a.building][a.room]={list:[],grade:a.grade};
+    byB[a.building][a.room].list.push(a);
+  });
+  const con=$('bcon'); con.innerHTML='';
+  Object.keys(byB).sort().forEach(b=>{
+    const {c,l}=BLDG[b]||{c:'#888',l:'อาคาร '+b};
+    const rms=byB[b]; const rc=Object.keys(rms).length;
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="btit">
+      <div class="bbdg" style="background:${c}">${b}</div>
+      <span class="bnm">${l}</span><span class="bcnt">${rc} ห้อง</span>
+    </div><div class="rrow" id="rr-${b}"></div>`;
+    con.appendChild(sec);
+    const row=sec.querySelector('#rr-'+b);
+    Object.keys(rms).sort().forEach(r=>{
+      const inf=rms[r];
+      const rep=inf.list.some(a=>a.status==='ชำรุด'||a.status==='รอซ่อม');
+      const cd=document.createElement('div');
+      cd.className=`rc b${b}`;
+      cd.innerHTML=`<div class="rdot" style="background:${rep?'#F59E0B':'#10B981'}"></div>
+        <div class="rnum">ห้อง ${r}</div>
+        <div class="rgrd">${inf.grade}</div>
+        <div class="rac">📦 ${inf.list.length} รายการ</div>`;
+      cd.onclick=()=>goRoom(b,r,l);
+      row.appendChild(cd);
+    });
+  });
+}
+
+// ── ASSETS TABLE ──
+function renderAssets(){
+  const b=$('fBld').value,c=$('fCat').value,s=$('fSt').value,q=$('qsrch').value.toLowerCase();
+  let d=[...DATA];
+  if(b)d=d.filter(a=>a.building===b);
+  if(c)d=d.filter(a=>a.category===c);
+  if(s)d=d.filter(a=>a.status===s);
+  if(q)d=d.filter(a=>(a.name+a.id+a.room).toLowerCase().includes(q));
+  const tb=$('atb');
+  if(!d.length){tb.innerHTML='<tr><td colspan="7" class="erow">ไม่พบข้อมูล</td></tr>';return;}
+  tb.innerHTML=d.map(a=>`<tr>
+    <td><code style="font-size:11px;color:#475569">${a.id}</code></td>
+    <td><strong>${a.name}</strong>${a.brand?`<br><small style="color:#94A3B8">${a.brand}</small>`:''}</td>
+    <td>${CATIC[a.category]||'📦'} ${a.category}</td>
+    <td>${a.building}/${a.room}<br><small style="color:#94A3B8">${a.grade}</small></td>
+    <td>${a.qty}</td>
+    <td><span class="stb s-${a.status}">${a.status}</span></td>
+    <td><button class="bic" onclick="openModal('${a.id}')">✏️</button>
+        <button class="bic" onclick="del('${a.id}')">🗑️</button></td></tr>`).join('');
+}
+
+// ── CATEGORIES ──
+function renderCats(){
+  const counts={};
+  DATA.forEach(a=>{counts[a.category]=(counts[a.category]||0)+1;});
+  Object.keys(CATIC).forEach(c=>{if(!counts[c])counts[c]=0;});
+  $('cgrid').innerHTML=Object.entries(counts).map(([c,n])=>`
+    <div class="ccard" onclick="goAssets('',c,'','')">
+      <div class="ccic">${CATIC[c]||'📦'}</div>
+      <div class="ccnm">${c}</div><div class="cccnt">${n} รายการ</div>
+    </div>`).join('');
+}
+
+// ── ALL ROOMS ──
+function renderAllRooms(){
+  const rms={};
+  DATA.forEach(a=>{
+    const k=a.building+'|'+a.room;
+    if(!rms[k])rms[k]={b:a.building,r:a.room,g:a.grade,n:0};
+    rms[k].n++;
+  });
+  $('allrooms').innerHTML=Object.values(rms)
+    .sort((a,z)=>a.b.localeCompare(z.b)||a.r.localeCompare(z.r))
+    .map(rm=>`<div class="rc b${rm.b}" onclick="goRoom('${rm.b}','${rm.r}','${BLDG[rm.b]?.l||''}')">
+      <div class="rnum">ห้อง ${rm.r}</div>
+      <div class="rgrd">อาคาร ${rm.b} · ${rm.g}</div>
+      <div class="rac">📦 ${rm.n} รายการ</div></div>`).join('');
+}
+
+// ── BUILDING ──
+function goBld(b){
+  CBLD=b;
+  const bl=BLDG[b]?.l||'อาคาร '+b;
+  $('bldTitle').textContent=bl;
+  const rms={};
+  DATA.filter(a=>a.building===b).forEach(a=>{
+    if(!rms[a.room])rms[a.room]={r:a.room,g:a.grade,n:0};
+    rms[a.room].n++;
+  });
+  $('bldrooms').innerHTML=Object.values(rms).sort((a,z)=>a.r.localeCompare(z.r))
+    .map(rm=>`<div class="rc b${b}" onclick="goRoom('${b}','${rm.r}','${bl}')">
+      <div class="rnum">ห้อง ${rm.r}</div><div class="rgrd">${rm.g}</div>
+      <div class="rac">📦 ${rm.n} รายการ</div></div>`).join('');
+  showPg('bld'); setBc(bl);
+}
+
+// ── ROOM ──
+function goRoom(b,r,bl){
+  CBLD=b; CROOM=r;
+  const assets=DATA.filter(a=>a.building===b&&a.room===r);
+  const grade=assets[0]?.grade||'';
+  $('roomTitle').textContent=`ห้อง ${r} — ${bl||'อาคาร '+b} (${grade})`;
+  const cnt={ดี:0,ชำรุด:0,รอซ่อม:0};
+  assets.forEach(a=>{if(cnt[a.status]!==undefined)cnt[a.status]++;});
+  $('rstats').innerHTML=`
+    <div class="rsc">📦<strong>${assets.length}</strong>รายการ</div>
+    <div class="rsc">✅<strong>${cnt['ดี']}</strong>ดี</div>
+    <div class="rsc">⚠️<strong>${cnt['ชำรุด']+cnt['รอซ่อม']}</strong>ซ่อม</div>`;
+  $('rtb').innerHTML=assets.length?assets.map(a=>`<tr>
+    <td><code style="font-size:11px">${a.id}</code></td>
+    <td><strong>${a.name}</strong>${a.brand?`<br><small style="color:#94A3B8">${a.brand}</small>`:''}</td>
+    <td>${CATIC[a.category]||'📦'} ${a.category}</td>
+    <td>${a.qty}</td>
+    <td><span class="stb s-${a.status}">${a.status}</span></td>
+    <td>${a.imageUrl?`<img src="${drvThumb(a.imageUrl)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'">`:'-'}</td>
+    <td><button class="bic" onclick="openModal('${a.id}')">✏️</button>
+        <button class="bic" onclick="del('${a.id}')">🗑️</button></td></tr>`).join('')
+    :'<tr><td colspan="7" class="erow">ไม่มีสินทรัพย์ในห้องนี้</td></tr>';
+  showPg('room'); setBc(`อาคาร ${b} › ห้อง ${r}`);
+}
+
+function goAssets(b,c,s,q){
+  if(b)$('fBld').value=b;
+  if(c)$('fCat').value=c;
+  if(s)$('fSt').value=s;
+  showPg('assets'); setBc('รายการสินทรัพย์'); renderAssets();
+}
+
+// ── USERS ──
+function renderUsers(){
+  const us=[{n:'ผู้ดูแลระบบหลัก',r:'admin',i:'A',c:'#8B5CF6'},
+    {n:'ครูอนุชา วงศ์สวัสดิ์',r:'co',i:'อ',c:'#3B82F6'},
+    {n:'ครูสมหญิง ใจดี',r:'co',i:'ส',c:'#10B981'}];
+  $('ulist').innerHTML=us.map(u=>`<div class="urow">
+    <div class="urav" style="background:${u.c}">${u.i}</div>
+    <div><div class="urnm">${u.n}</div>
+      <div class="urrl">${u.r==='admin'?'ผู้ดูแลระบบ':'ผู้ช่วยดูแลระบบ'}</div></div>
+    <span class="rchip r-${u.r}">${u.r==='admin'?'Admin':'Co-Admin'}</span>
+  </div>`).join('');
+}
+
+// ── SETTINGS ──
+function initCfg(){
+  $('cfgGas').value=localStorage.getItem('gasUrl')||'';
+  $('cfgSheet').value=localStorage.getItem('sheetId')||'10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw';
+  $('cfgDrive').value=localStorage.getItem('driveId')||'1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW';
+}
+function saveCfg(){
+  localStorage.setItem('gasUrl',$('cfgGas').value.trim());
+  localStorage.setItem('sheetId',$('cfgSheet').value.trim());
+  localStorage.setItem('driveId',$('cfgDrive').value.trim());
+  const m=$('cfgMsg'); m.className='smsg ok'; m.textContent='✅ บันทึกเรียบร้อย';
+  toast('บันทึกการตั้งค่าแล้ว','ok'); setTimeout(()=>m.textContent='',3000);
+}
+
+// ── MODAL ──
+function openModal(id=null){
+  EDIT=id;
+  $('mtitle').textContent=id?'แก้ไขสินทรัพย์':'เพิ่มสินทรัพย์';
+  if(id){
+    const a=DATA.find(x=>x.id===id); if(!a)return;
+    $('mId').value=a.id; $('mName').value=a.name; $('mCat').value=a.category;
+    $('mBld').value=a.building; $('mRoom').value=a.room; $('mGrd').value=a.grade;
+    $('mQty').value=a.qty; $('mSt').value=a.status; $('mBrand').value=a.brand||'';
+    $('mSerial').value=a.serial||''; $('mYear').value=a.year||'';
+    $('mNote').value=a.note||''; $('mImg').value=a.imageUrl||'';
+    prvImg(a.imageUrl);
+  } else {
+    ['mId','mName','mRoom','mBrand','mSerial','mYear','mNote','mImg'].forEach(i=>$(i).value='');
+    $('mCat').value=''; $('mBld').value=CBLD||''; $('mGrd').value='';
+    $('mQty').value=1; $('mSt').value='ดี'; $('ipv').innerHTML='';
+    if(CROOM) $('mRoom').value=CROOM;
+  }
+  $('modal').classList.add('open');
+}
+function closeModal(){ $('modal').classList.remove('open'); EDIT=null; }
+function prvImg(url){
+  const p=$('ipv');
+  if(url&&url.startsWith('http'))p.innerHTML=`<img src="${drvThumb(url)}" onerror="this.style.display='none'">`;
+  else p.innerHTML='';
+}
+function drvThumb(url){
+  const m=url.match(/\/d\/([^/]+)/);
+  return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`:url;
+}
+
+async function saveAsset(){
+  const a={id:$('mId').value.trim(),name:$('mName').value.trim(),
+    category:$('mCat').value,building:$('mBld').value,room:$('mRoom').value.trim(),
+    grade:$('mGrd').value,qty:parseInt($('mQty').value)||1,status:$('mSt').value,
+    brand:$('mBrand').value.trim(),serial:$('mSerial').value.trim(),
+    year:$('mYear').value.trim(),note:$('mNote').value.trim(),imageUrl:$('mImg').value.trim()};
+  if(!a.name||!a.building||!a.room){toast('กรุณากรอกชื่อ, อาคาร และห้อง','er');return;}
+  const btn=$('msave'); btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
+  try{
+    await persist(a);
+    toast(EDIT?'✅ แก้ไขเรียบร้อย':'✅ เพิ่มสินทรัพย์แล้ว','ok');
+    closeModal(); refresh();
+  }catch(e){toast('เกิดข้อผิดพลาด: '+e.message,'er');}
+  finally{btn.disabled=false;btn.textContent='💾 บันทึก';}
+}
+
+async function del(id){
+  const a=DATA.find(x=>x.id===id);
+  if(!a||!confirm(`ลบ "${a.name}" ?\nไม่สามารถยกเลิกได้`))return;
+  await remove(id); toast('🗑️ ลบแล้ว'); refresh();
+}
+
+// ── PAGE NAV ──
+function showPg(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const el=$('pg-'+name); if(el)el.classList.add('on');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.querySelector(`.ni[data-pg="${name}"]`)?.classList.add('on');
+  closeSb();
+}
+function setBc(t){ $('bc').textContent=t; }
+function closeSb(){
+  $('sb').classList.remove('open');
+  $('overlay').classList.remove('show');
+}
+
+function refresh(){
+  const pg=document.querySelector('.pg.on')?.id?.replace('pg-','');
+  if(pg==='dashboard')renderDash();
+  else if(pg==='assets')renderAssets();
+  else if(pg==='cats')renderCats();
+  else if(pg==='rooms')renderAllRooms();
+  else if(pg==='room'&&CROOM)goRoom(CBLD,CROOM,BLDG[CBLD]?.l||'');
+  updStats();
+}
+
+// ── TOAST ──
+function toast(msg,type='ok'){
+  const t=$('tst'); t.textContent=msg;
+  t.className='tst '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',async()=>{
+  // Sidebar
+  $('mbtn').onclick=()=>{ $('sb').classList.add('open'); $('overlay').classList.add('show'); };
+  $('sbX').onclick=closeSb;
+  $('overlay').onclick=closeSb;
+
+  // Nav pages
+  document.querySelectorAll('.ni[data-pg]').forEach(el=>{
+    el.onclick=()=>{
+      const pg=el.dataset.pg;
+      showPg(pg);
+      setBc(el.querySelector('.ni-tx')?.textContent||pg);
+      if(pg==='dashboard')renderDash();
+      else if(pg==='assets'){renderAssets();}
+      else if(pg==='cats')renderCats();
+      else if(pg==='rooms')renderAllRooms();
+      else if(pg==='settings')initCfg();
+      else if(pg==='users')renderUsers();
+    };
+  });
+
+  // Nav buildings
+  document.querySelectorAll('.ni[data-bld]').forEach(el=>{
+    el.onclick=()=>goBld(el.dataset.bld);
+  });
+
+  // Grade filter
+  $('gf').onclick=e=>{
+    const btn=e.target.closest('.fb'); if(!btn)return;
+    document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on'); GF=btn.dataset.g; renderDash();
+  };
+
+  // Asset filters
+  ['fBld','fCat','fSt'].forEach(id=>$(id).addEventListener('change',renderAssets));
+
+  // Search
+  $('qsrch').addEventListener('input',()=>{ showPg('assets'); setBc('รายการสินทรัพย์'); renderAssets(); });
+
+  // Add buttons
+  $('btnAdd').onclick=()=>openModal();
+  $('btnAdd2').onclick=()=>openModal();
+  $('btnAdd3').onclick=()=>openModal();
+
+  // Modal
+  $('mclose').onclick=closeModal;
+  $('mcancel').onclick=closeModal;
+  $('msave').onclick=saveAsset;
+  $('modal').onclick=e=>{if(e.target===$('modal'))closeModal();};
+  $('mImg').addEventListener('blur',()=>prvImg($('mImg').value));
+
+  // Back
+  $('bldBk').onclick=()=>{showPg('dashboard');setBc('แดชบอร์ด');renderDash();};
+  $('roomBk').onclick=()=>{if(CBLD)goBld(CBLD);else{showPg('dashboard');setBc('แดชบอร์ด');}};
+
+  // Settings save
+  $('btnSaveCfg').onclick=saveCfg;
+
+  // Populate cat filter
+  Object.keys(CATIC).forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c;o.textContent=c;
+    $('fCat').appendChild(o);
+  });
+
+  // Load
+  toast('⏳ กำลังโหลดข้อมูล...');
+  await load();
+  renderDash();
+  toast('✅ โหลดข้อมูลเรียบร้อย','ok');
+});
+</script>
+</body>
+</html>
