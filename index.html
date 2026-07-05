@@ -1170,30 +1170,108 @@ function initUpload(){
   if(!inp) return;
   inp.addEventListener('change',e=>{
     const file=e.target.files[0]; if(!file) return;
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      document.getElementById('ipv').innerHTML=`<img src="${ev.target.result}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px">`;
-      document.getElementById('mImg').value=ev.target.result; // store as base64
-      toast('📷 โหลดรูปเรียบร้อย','ok');
-    };
-    reader.readAsDataURL(file);
+    handleImageFile(file);
   });
-  // Drag & drop
   const area=document.getElementById('uploadArea');
   if(area){
     area.addEventListener('dragover',e=>{e.preventDefault();area.classList.add('drag');});
     area.addEventListener('dragleave',()=>area.classList.remove('drag'));
     area.addEventListener('drop',e=>{
       e.preventDefault(); area.classList.remove('drag');
-      const file=e.dataTransfer.files[0]; if(!file||!file.type.startsWith('image/')) return;
-      const reader=new FileReader();
-      reader.onload=ev=>{
-        document.getElementById('ipv').innerHTML=`<img src="${ev.target.result}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px">`;
-        document.getElementById('mImg').value=ev.target.result;
-      };
-      reader.readAsDataURL(file);
+      const file=e.dataTransfer.files[0];
+      if(!file||!file.type.startsWith('image/')) return;
+      handleImageFile(file);
     });
   }
+}
+
+async function handleImageFile(file){
+  // Show preview immediately
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    document.getElementById('ipv').innerHTML=
+      `<img src="${ev.target.result}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px">`;
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to Google Drive via GAS
+  const url=gasUrl();
+  if(!url){
+    toast('⚠️ ยังไม่ได้ตั้งค่า GAS URL','er'); return;
+  }
+
+  // Show uploading state
+  const area=document.getElementById('uploadArea');
+  const origHtml=area.innerHTML;
+  area.innerHTML='<div class="upload-icon">⏳</div><div class="upload-text">กำลังอัปโหลด...</div>';
+
+  try{
+    // Convert file to base64
+    const b64=await fileToBase64(file);
+    const assetId=document.getElementById('mId').value||'asset-'+Date.now();
+    const fileName=assetId+'-'+Date.now()+'.'+file.name.split('.').pop();
+
+    // Send to GAS
+    const res=await fetch(url,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({
+        action:'uploadImage',
+        fileName:fileName,
+        mimeType:file.type,
+        base64Data:b64.split(',')[1],
+        folderId:localStorage.getItem('driveId')||'1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW'
+      })
+    });
+
+    // no-cors ทำให้อ่าน response ไม่ได้ ใช้ JSONP แทน
+    const cbName='_imgCb'+Date.now();
+    const result=await new Promise((resolve,reject)=>{
+      window[cbName]=function(d){resolve(d);delete window[cbName];};
+      const sc=document.createElement('script');
+      sc.src=url+'?action=uploadImageJsonp&fileName='+encodeURIComponent(fileName)
+        +'&mimeType='+encodeURIComponent(file.type)
+        +'&base64Data='+encodeURIComponent(b64.split(',')[1])
+        +'&folderId='+(localStorage.getItem('driveId')||'1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW')
+        +'&callback='+cbName;
+      sc.onerror=()=>{reject(new Error('Script error'));delete window[cbName];sc.remove();};
+      document.head.appendChild(sc);
+      setTimeout(()=>{
+        if(window[cbName]){
+          // Fallback: assume success, use preview
+          resolve({success:false,error:'timeout'});
+          delete window[cbName]; sc.remove();
+        }
+      },15000);
+    });
+
+    if(result&&result.success&&result.url){
+      document.getElementById('mImg').value=result.url;
+      document.getElementById('ipv').innerHTML=
+        `<img src="${result.thumbUrl||result.url}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px" onerror="this.style.display='none'">`;
+      toast('✅ อัปโหลดรูปสำเร็จ','ok');
+    } else {
+      // Fallback: keep base64 preview, user can set URL manually
+      toast('⚠️ อัปโหลดไม่สำเร็จ — รูปแสดง preview เท่านั้น','er');
+      document.getElementById('mImg').value='';
+    }
+  }catch(err){
+    toast('เกิดข้อผิดพลาด: '+err.message,'er');
+  }finally{
+    area.innerHTML=origHtml;
+    // Re-init file input
+    initUpload();
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=e=>resolve(e.target.result);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
 }
 
 </script>
