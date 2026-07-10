@@ -1414,9 +1414,82 @@ async function getGdriveToken(){
   });
 }
 
+
+// ── สร้าง/หาโฟลเดอร์ตามอาคารและห้อง ──
+async function getOrCreateFolder(token, building, room){
+  const parentId = GDRIVE_FOLDER_ID;
+  
+  // 1. หา/สร้าง subfolder อาคาร
+  const bldName = 'อาคาร_' + building;
+  const bldId = await findOrCreate(token, bldName, parentId);
+  
+  // 2. หา/สร้าง subfolder ห้อง ภายใต้อาคาร
+  const roomName = 'ห้อง_' + room;
+  const roomId = await findOrCreate(token, roomName, bldId);
+  
+  return roomId;
+}
+
+async function findOrCreate(token, name, parentId){
+  // ค้นหาโฟลเดอร์ที่มีอยู่แล้ว
+  const q = encodeURIComponent(
+    `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,
+    { headers: { 'Authorization': 'Bearer ' + token } }
+  );
+  const searchData = await searchRes.json();
+  
+  if(searchData.files && searchData.files.length > 0){
+    return searchData.files[0].id; // มีอยู่แล้ว
+  }
+  
+  // สร้างใหม่
+  const createRes = await fetch(
+    'https://www.googleapis.com/drive/v3/files',
+    {
+      method: 'POST',
+      headers: { 
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentId]
+      })
+    }
+  );
+  const createData = await createRes.json();
+  
+  // ทำให้ folder เป็น public
+  await fetch(`https://www.googleapis.com/drive/v3/files/${createData.id}/permissions`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' })
+  });
+  
+  return createData.id;
+}
+
+let isUploading = false;
+
 async function uploadToDrive(file){
   const statusEl = document.getElementById('uploadStatus');
   const labelEl = document.getElementById('driveUploadLabel');
+  const saveBtn = document.getElementById('msave');
+  
+  // Lock save button
+  isUploading = true;
+  if(saveBtn){ 
+    saveBtn.disabled = true; 
+    saveBtn.textContent = '⏳ รออัปโหลดรูปก่อน...';
+    saveBtn.style.opacity = '0.5';
+  }
   
   statusEl.className = 'upload-status uploading';
   statusEl.textContent = '⏳ กำลังเชื่อมต่อ Google Drive...';
@@ -1426,12 +1499,21 @@ async function uploadToDrive(file){
     
     statusEl.textContent = '📤 กำลังอัปโหลดรูปภาพ...';
     
-    // Create metadata
+    // Create metadata — จัดโฟลเดอร์ตามอาคาร/ห้อง
     const assetId = document.getElementById('mId').value || 'asset';
-    const fileName = assetId + '-' + Date.now() + '.' + file.name.split('.').pop();
+    const building = document.getElementById('mBld').value || 'other';
+    const room = document.getElementById('mRoom').value || 'other';
+    const ext = file.name.split('.').pop();
+    const fileName = assetId + '-' + Date.now() + '.' + ext;
+    
+    // สร้าง/หา subfolder: อาคาร_X/ห้อง_XXX
+    statusEl.textContent = '📁 กำลังสร้างโฟลเดอร์...';
+    const token2 = await getGdriveToken();
+    const folderId = await getOrCreateFolder(token2, building, room);
+    
     const metadata = {
       name: fileName,
-      parents: [GDRIVE_FOLDER_ID]
+      parents: [folderId]
     };
     
     // Upload using multipart
@@ -1443,7 +1525,7 @@ async function uploadToDrive(file){
       'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
       {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token },
+        headers: { 'Authorization': 'Bearer ' + token2 },
         body: form
       }
     );
@@ -1457,7 +1539,7 @@ async function uploadToDrive(file){
     await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + token,
+        'Authorization': 'Bearer ' + token2,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ role: 'reader', type: 'anyone' })
@@ -1476,11 +1558,27 @@ async function uploadToDrive(file){
     labelEl.textContent = '📷 เปลี่ยนรูป';
     toast('✅ อัปโหลดรูปสำเร็จ', 'ok');
     
+    // Unlock save button
+    isUploading = false;
+    if(saveBtn){ 
+      saveBtn.disabled = false; 
+      saveBtn.textContent = '💾 บันทึก';
+      saveBtn.style.opacity = '1';
+    }
+    
   } catch(err) {
     console.error(err);
     statusEl.className = 'upload-status fail';
     statusEl.textContent = '❌ อัปโหลดไม่สำเร็จ กรุณาลองใหม่';
     toast('อัปโหลดไม่สำเร็จ: ' + err.message, 'er');
+    
+    // Unlock save button on error too
+    isUploading = false;
+    if(saveBtn){ 
+      saveBtn.disabled = false; 
+      saveBtn.textContent = '💾 บันทึก';
+      saveBtn.style.opacity = '1';
+    }
   }
 }
 
