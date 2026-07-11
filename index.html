@@ -820,7 +820,9 @@ function loadJsonp(url){
     const sc=document.createElement('script');
     window[cb]=function(data){resolve(data);delete window[cb];sc.remove();};
     sc.onerror=()=>{reject(new Error('fail'));delete window[cb];sc.remove();};
-    sc.src=url+'?action=getAssets&callback='+cb;
+    // ถ้า URL มี ? แล้ว ต่อด้วย & ถ้าไม่มีต่อด้วย ?
+    const sep = url.includes('?') ? '&' : '?';
+    sc.src=url+sep+'callback='+cb;
     document.head.appendChild(sc);
     setTimeout(()=>{if(window[cb]){reject(new Error('timeout'));delete window[cb];sc.remove();}},10000);
   });
@@ -877,7 +879,6 @@ async function load(){
   const url = gasUrl();
   if(!url){
     toast('⚠️ กรุณาตั้งค่า GAS URL หรือเปิด Demo Mode ในเมนูตั้งค่า','er');
-    await loadConfig();
     return;
   }
   await loadConfig();
@@ -1158,18 +1159,23 @@ async function reloadData(){
   const url = gasUrl();
   if(!url) return;
   try{
-    const j = await loadJsonp(url+'?action=getAll');
+    const fullUrl = url + '?action=getAll';
+    const j = await loadJsonp(fullUrl);
     if(j && j.success && j.data){
       const d = j.data;
       if(d.assets) DATA = d.assets;
-      // อัปเดต config ด้วย
       if(d.buildings && d.buildings.length){
         Object.keys(_bldg).forEach(k=>delete _bldg[k]);
         d.buildings.forEach(b=>{ _bldg[b.code]={c:b.color||'#888',l:b.label||'อาคาร '+b.code}; });
+        Object.keys(BLDG).forEach(k=>delete BLDG[k]);
         Object.assign(BLDG, _bldg);
       }
       if(d.rooms) _rooms = d.rooms.map(r=>({building:r.building,room:r.room,grade:r.grade}));
-      if(d.categories) _cats = d.categories.map(c=>({name:c.name,icon:c.icon||'📦'}));
+      if(d.categories){
+        _cats = d.categories.map(c=>({name:c.name,icon:c.icon||'📦'}));
+        Object.keys(CATIC).forEach(k=>delete CATIC[k]);
+        _cats.forEach(c=>{ CATIC[c.name]=c.icon||'📦'; });
+      }
       if(d.grades) _grades = d.grades.map(g=>({name:g.name}));
     }
   }catch(e){ console.warn('reloadData error:',e); }
@@ -1933,7 +1939,9 @@ async function loadConfig(){
     return;
   }
   try{
-    const j = await loadJsonp(url+'?action=getAll');
+    // ส่ง URL พร้อม action โดยตรง — loadJsonp จะต่อแค่ &callback=
+    const fullUrl = url + '?action=getAll';
+    const j = await loadJsonp(fullUrl);
     if(j && j.success && j.data){
       const d = j.data;
       // Buildings
@@ -1946,7 +1954,13 @@ async function loadConfig(){
       // Grades
       _grades = (d.grades||[]).map(g=>({name:g.name}));
       // Assets
-      if(d.assets&&d.assets.length) DATA=d.assets;
+      if(d.assets && d.assets.length) DATA = d.assets;
+      // Sync BLDG global
+      Object.keys(BLDG).forEach(k=>delete BLDG[k]);
+      Object.assign(BLDG, _bldg);
+      // Sync CATIC global
+      Object.keys(CATIC).forEach(k=>delete CATIC[k]);
+      _cats.forEach(c=>{ CATIC[c.name]=c.icon||'📦'; });
     }
   }catch(e){
     console.warn('loadConfig error:',e);
