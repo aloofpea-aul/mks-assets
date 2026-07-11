@@ -368,6 +368,65 @@ textarea.fi{resize:vertical;min-height:60px}
 .ccard-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--navy);opacity:.15;border-radius:0 0 var(--r) var(--r)}
 .ccard-status-row{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap}
 .ccard-s{font-size:10px;padding:1px 6px;border-radius:20px;font-weight:600}
+
+/* ===== LOGIN PAGE ===== */
+.login-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:linear-gradient(135deg,#1B2B5E 0%,#243571 50%,#1B2B5E 100%);
+  align-items:center;justify-content:center;
+}
+.login-overlay.show{display:flex}
+.login-card{
+  background:#fff;border-radius:20px;padding:36px 32px;
+  width:100%;max-width:380px;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  animation:loginIn .3s ease;
+}
+@keyframes loginIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.login-logo{font-size:48px;margin-bottom:12px}
+.login-school{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--g400);margin-bottom:28px}
+.login-divider{height:1px;background:var(--g200);margin:20px 0}
+.login-note{font-size:12px;color:var(--g400);margin-top:16px;line-height:1.6}
+.login-error{
+  background:#FEE2E2;color:#991B1B;
+  border-radius:8px;padding:10px 14px;
+  font-size:13px;margin-top:14px;display:none;
+}
+.login-error.show{display:block}
+.btn-google{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;border:2px solid var(--g200);border-radius:10px;
+  padding:12px 20px;width:100%;cursor:pointer;
+  font-family:var(--f);font-size:15px;font-weight:600;color:var(--g800);
+  transition:all .2s;
+}
+.btn-google:hover{border-color:#4285F4;box-shadow:0 4px 12px rgba(66,133,244,.2)}
+.btn-google img{width:22px;height:22px}
+.user-chip{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);border-radius:8px;
+  padding:6px 10px;cursor:pointer;transition:background .2s;
+}
+.user-chip:hover{background:rgba(255,255,255,.2)}
+.user-chip-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--gold);color:var(--navy);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:12px;flex-shrink:0;
+}
+.user-chip-name{font-size:12px;font-weight:600;color:#fff;max-width:100px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-badge-admin{color:var(--gold2);font-size:10px}
+.role-badge-viewer{color:rgba(255,255,255,.5);font-size:10px}
+/* ซ่อนปุ่มสำหรับ viewer */
+body.role-viewer .admin-only{display:none!important}
+
+/* ผู้ใช้ Viewer ไม่เห็นปุ่มลบ และปุ่มจัดการอาคาร */
+body.role-viewer .del-btn { display:none!important }
+body.role-viewer [data-pg="manage"] { display:none!important }
+body.role-viewer [data-pg="settings"] { display:none!important }
+body.role-viewer [data-pg="users"] { display:none!important }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -412,9 +471,21 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
   </nav>
   <div class="sb-ft">
-    <div class="usr">
-      <div class="uav">A</div>
-      <div><span class="unm">Admin</span><span class="url">ผู้ดูแลระบบ</span></div>
+    <div id="sbUserInfo" style="cursor:pointer">
+      <div class="usr" onclick="showUserMenu()">
+        <div class="uav" id="sbAvatar">G</div>
+        <div style="flex:1;min-width:0">
+          <span class="unm" id="sbUserName">ผู้ใช้งาน</span>
+          <span class="url" id="sbUserRole">ทั่วไป</span>
+        </div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px">⋮</div>
+      </div>
+      <button onclick="loginWithGoogle()" style="margin-top:8px;width:100%;background:rgba(255,255,255,.1);
+        border:1px solid rgba(255,255,255,.2);border-radius:6px;color:rgba(255,255,255,.7);
+        font-family:var(--f);font-size:11px;padding:5px;cursor:pointer;transition:background .2s"
+        id="sbLoginBtn">
+        🔐 เข้าสู่ระบบ Google
+      </button>
     </div>
   </div>
 </aside>
@@ -430,7 +501,7 @@ textarea.fi{resize:vertical;min-height:60px}
         <span style="color:var(--g400)">🔍</span>
         <input type="text" placeholder="ค้นหาสินทรัพย์..." id="qsrch">
       </div>
-      <button class="bp" id="btnAdd">+ เพิ่ม</button>
+      <button class="bp" id="btnAdd" class="bp admin-only">+ เพิ่ม</button>
     </div>
   </header>
 
@@ -465,7 +536,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <div class="pg" id="pg-assets">
     <div class="ph">
       <h1>รายการสินทรัพย์</h1>
-      <button class="bp" id="btnAdd2">+ เพิ่มสินทรัพย์</button>
+      <button class="bp" id="btnAdd2" class="bp admin-only">+ เพิ่มสินทรัพย์</button>
     </div>
     <div class="tlbr">
       <div class="frow">
@@ -776,6 +847,29 @@ textarea.fi{resize:vertical;min-height:60px}
         <button class="bp" onclick="printQR()">🖨️ พิมพ์</button>
         <button class="bs" onclick="downloadQR()">⬇️ บันทึกรูป</button>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">🏫</div>
+    <div class="login-school">ระบบสินทรัพย์ห้องเรียน</div>
+    <div class="login-sub">โรงเรียนเมืองกระบี่</div>
+    <button class="btn-google" id="btnGoogleLogin" onclick="loginWithGoogle()">
+      <svg width="22" height="22" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-note">
+      เฉพาะผู้ที่ได้รับสิทธิ์เท่านั้น<br>ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์เข้าใช้งาน
     </div>
   </div>
 </div>
@@ -1328,6 +1422,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(isDemoMode()){const b=document.getElementById('demoBadge');if(b)b.style.display='inline-block';}
   // sidebar จะอัปเดตหลัง load() เสร็จแล้ว
 
+  // ข้ามการ Login — เปิดใช้งานได้เลย (จะเพิ่มสิทธิ์ทีหลัง)
   // Load
   toast('⏳ กำลังโหลดข้อมูลจาก Google Sheets...');
   await load();
@@ -1337,6 +1432,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   renderDash();
   toast('✅ โหลดข้อมูลเรียบร้อย','ok');
 });
+
+
 
 // ============================================================
 //  FEATURE: STATS & CHARTS
@@ -2447,6 +2544,215 @@ function updateSidebarBld(){
       <span class="ni-tx">${info.l}</span>
     </div>`;
   }).join('');
+}
+
+
+// ============================================================
+//  GOOGLE LOGIN + ROLE-BASED ACCESS
+// ============================================================
+const GDRIVE_LOGIN_SCOPE = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile ' + GDRIVE_SCOPE;
+
+let currentUser = null; // {email, name, role, picture}
+
+function getStoredUser(){
+  try{ return JSON.parse(sessionStorage.getItem('mksUser')||'null'); }
+  catch(e){ return null; }
+}
+function storeUser(u){ sessionStorage.setItem('mksUser', JSON.stringify(u)); }
+function clearUser(){ sessionStorage.removeItem('mksUser'); currentUser=null; }
+
+// ── ตรวจสอบ Login ตอนเปิดเว็บ ──
+async function checkLogin(){
+  // เช็ก session ที่เก็บไว้ก่อน
+  const stored = getStoredUser();
+  if(stored && stored.email){
+    currentUser = stored;
+    applyRole(currentUser.role);
+    updateUserUI();
+    return true;
+  }
+  // ยังไม่ได้ Login → ใช้งานได้เลยในฐานะ Admin (ชั่วคราว)
+  currentUser = {email:'guest',name:'ผู้ใช้งาน',role:'admin'};
+  applyRole('admin');
+  updateUserUI();
+  return true;
+}
+
+function showLoginOverlay(){
+  document.getElementById('loginOverlay').classList.add('show');
+}
+function hideLoginOverlay(){
+  document.getElementById('loginOverlay').classList.remove('show');
+}
+
+async function loginWithGoogle(){
+  const btn = document.getElementById('btnGoogleLogin');
+  btn.disabled=true;
+  btn.innerHTML='⏳ กำลังเชื่อมต่อ...';
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
+
+  try{
+    // ขอ token จาก Google
+    const token = await getGdriveToken();
+    if(!token) throw new Error('ไม่สามารถเชื่อมต่อ Google ได้');
+
+    // ดึงข้อมูล profile
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const profile = await profileRes.json();
+    if(!profile.email) throw new Error('ไม่สามารถอ่าน email ได้');
+
+    // เช็ก email กับ GAS
+    const url = gasUrl();
+    if(!url) throw new Error('ยังไม่ได้ตั้งค่า GAS URL');
+
+    const checkResult = await loadJsonp(url+'?action=checkUser&email='+encodeURIComponent(profile.email));
+    if(!checkResult || !checkResult.success){
+      throw new Error(checkResult?.error || 'ไม่พบสิทธิ์การเข้าถึง');
+    }
+
+    // Login สำเร็จ
+    currentUser = {
+      email: profile.email,
+      name: checkResult.user.name || profile.name || profile.email,
+      role: checkResult.user.role || 'viewer',
+      picture: profile.picture || '',
+    };
+    storeUser(currentUser);
+    applyRole(currentUser.role);
+    updateUserUI();
+    hideLoginOverlay();
+    toast('✅ ยินดีต้อนรับ '+currentUser.name,'ok');
+
+  }catch(err){
+    errEl.textContent = '❌ '+err.message;
+    errEl.classList.add('show');
+    btn.disabled=false;
+    btn.innerHTML='<svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> เข้าสู่ระบบด้วย Google';
+  }
+}
+
+function applyRole(role){
+  // ลบ class เก่าออกก่อน
+  document.body.classList.remove('role-admin','role-viewer');
+  document.body.classList.add('role-'+(role||'viewer'));
+}
+
+function updateUserUI(){
+  if(!currentUser) return;
+  const isGuest = currentUser.email === 'guest';
+  const initial = (currentUser.name||'U').charAt(0).toUpperCase();
+  const el = document.getElementById('sbAvatar');
+  const nameEl = document.getElementById('sbUserName');
+  const roleEl = document.getElementById('sbUserRole');
+  const loginBtn = document.getElementById('sbLoginBtn');
+
+  if(el){
+    if(currentUser.picture){
+      el.innerHTML = '<img src="'+currentUser.picture+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover">';
+      el.style.background='transparent';
+    } else {
+      el.textContent = initial;
+      el.style.background='';
+    }
+  }
+  if(nameEl) nameEl.textContent = isGuest ? 'ผู้ใช้งาน' : (currentUser.name||currentUser.email);
+  if(roleEl) roleEl.textContent = isGuest ? 'กด Login เพื่อรับสิทธิ์' : (currentUser.role==='admin'?'ผู้ดูแลระบบ':'ผู้ชม');
+  // ซ่อนปุ่ม Login เมื่อ login แล้ว
+  if(loginBtn) loginBtn.style.display = isGuest ? 'block' : 'none';
+}
+
+function showUserMenu(){
+  const isGuest = currentUser?.email === 'guest';
+  if(isGuest){
+    if(confirm('ยังไม่ได้ Login\n\nต้องการเข้าสู่ระบบด้วย Google เพื่อรับสิทธิ์?')){
+      loginWithGoogle();
+    }
+    return;
+  }
+  const role = currentUser?.role || 'viewer';
+  const name = currentUser?.name || '-';
+  const email = currentUser?.email || '-';
+  if(confirm(`👤 ${name}\n📧 ${email}\n🔑 สิทธิ์: ${role==='admin'?'Admin':'Viewer'}\n\nออกจากระบบ?`)){
+    logout();
+  }
+}
+
+function logout(){
+  clearUser();
+  gdriveToken = null;
+  gdriveTokenExpiry = 0;
+  localStorage.removeItem('gdriveToken');
+  localStorage.removeItem('gdriveTokenExpiry');
+  // กลับไปเป็น guest แทนที่จะแสดงหน้า login
+  currentUser = {email:'guest',name:'ผู้ใช้งาน',role:'admin'};
+  applyRole('admin');
+  updateUserUI();
+  toast('ออกจากระบบแล้ว');
+}
+
+// ── จัดการหน้า Users ──
+function renderUsers(){
+  const url = gasUrl();
+  const usersData = [];
+  // โหลดจาก _users ที่ได้มาจาก getAllConfig
+  loadJsonp(url+'?action=getAll').then(j=>{
+    if(j&&j.success&&j.data&&j.data.users){
+      renderUsersTable(j.data.users);
+    }
+  }).catch(()=>{
+    document.getElementById('ulist').innerHTML='<div style="text-align:center;color:var(--g400);padding:32px">ไม่สามารถโหลดข้อมูลได้</div>';
+  });
+}
+
+function renderUsersTable(users){
+  const roleColor={admin:'#8B5CF6',viewer:'#10B981'};
+  const roleLabel={admin:'Admin',viewer:'Viewer'};
+  document.getElementById('ulist').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:14px;font-weight:700;color:var(--navy)">${users.length} บัญชี</span>
+      ${currentUser?.role==='admin'?'<button class="bp" onclick="openAddUser()">+ เพิ่มผู้ใช้</button>':''}
+    </div>
+    ${users.map((u,i)=>`<div class="urow">
+      <div class="urav" style="background:${roleColor[u.role]||'#888'}">${(u.name||u.email).charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div class="urnm">${u.name||'-'}</div>
+        <div class="urrl">${u.email}</div>
+      </div>
+      <span class="rchip" style="background:${roleColor[u.role]||'#888'}22;color:${roleColor[u.role]||'#888'}">${roleLabel[u.role]||u.role}</span>
+      ${currentUser?.role==='admin' && u.email!==currentUser?.email ? `
+        <button class="bic" onclick="toggleUserRole('${u.email}','${u.role}','${u.name}')" title="เปลี่ยน Role">🔄</button>
+        <button class="bic" onclick="deleteUser('${u.email}','${u.name}')" title="ลบ">🗑️</button>
+      ` : ''}
+    </div>`).join('')}
+  `;
+}
+
+function openAddUser(){
+  const email = prompt('กรอก Email ที่ต้องการเพิ่ม:');
+  if(!email||!email.includes('@')) return;
+  const name = prompt('ชื่อผู้ใช้:', email.split('@')[0]);
+  const role = confirm('กด OK = Admin\nกด Cancel = Viewer (ดูอย่างเดียว)') ? 'admin' : 'viewer';
+  gasWrite({action:'addUser',data:{email:email.toLowerCase().trim(),name:name||email,role,active:'true'}})
+    .then(()=>{ toast('✅ เพิ่มผู้ใช้ '+email+' แล้ว','ok'); renderUsers(); })
+    .catch(e=>toast('เกิดข้อผิดพลาด: '+e.message,'er'));
+}
+
+async function toggleUserRole(email, currentRole, name){
+  const newRole = currentRole==='admin'?'viewer':'admin';
+  if(!confirm(`เปลี่ยน ${name} จาก ${currentRole} → ${newRole}?`)) return;
+  await gasWrite({action:'updateUser',data:{email,name,role:newRole,active:'true'}});
+  toast('✅ เปลี่ยน role แล้ว','ok');
+  renderUsers();
+}
+
+async function deleteUser(email, name){
+  if(!confirm(`ลบ ${name} (${email}) ออกจากระบบ?`)) return;
+  await gasWrite({action:'deleteUser',email});
+  toast('🗑️ ลบผู้ใช้แล้ว');
+  renderUsers();
 }
 
 </script>
