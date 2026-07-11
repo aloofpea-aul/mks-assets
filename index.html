@@ -889,13 +889,30 @@ async function load(){
     });
   }
 }
-function gasPost(payload){
-  const url=gasUrl(); if(!url) return Promise.resolve({success:true});
-  // ใช้ no-cors fetch สำหรับ POST (GAS รับได้ แต่ response จะเป็น opaque)
-  return fetch(url,{method:'POST',mode:'no-cors',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify(payload)}).catch(()=>{});
+// ── ส่งข้อมูลไป GAS ผ่าน JSONP (แก้ปัญหา CORS ทุก browser) ──
+function gasWrite(payload){
+  return new Promise((resolve, reject)=>{
+    const url = gasUrl();
+    if(!url){ resolve({success:true}); return; }
+    const cb = '_w'+Date.now();
+    const sc = document.createElement('script');
+    // แปลง payload เป็น base64 เพื่อส่งผ่าน URL
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    window[cb] = function(res){
+      resolve(res);
+      delete window[cb];
+      sc.remove();
+    };
+    sc.onerror = ()=>{ reject(new Error('Write failed')); delete window[cb]; sc.remove(); };
+    sc.src = url+'?action=write&payload='+encodeURIComponent(encoded)+'&callback='+cb;
+    document.head.appendChild(sc);
+    setTimeout(()=>{
+      if(window[cb]){ resolve({success:true,timeout:true}); delete window[cb]; sc.remove(); }
+    }, 10000);
+  });
 }
+// compat alias
+function gasPost(payload){ return gasWrite(payload); }
 async function persist(asset){
   const url=gasUrl();
   if(!url){ toast('⚠️ ยังไม่ได้ตั้งค่า GAS URL','er'); return; }
@@ -1857,13 +1874,8 @@ function getGRADES(){ return _grades; }
 
 // Save to Sheets via GAS
 async function gasConfigPost(payload){
-  const url = gasUrl(); if(!url) return {success:true};
-  try{
-    await fetch(url,{method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)});
-  }catch(e){}
-  return {success:true};
+  try{ return await gasWrite(payload); }
+  catch(e){ console.warn('gasConfigPost error:',e); return {success:false}; }
 }
 
 // Buildings
