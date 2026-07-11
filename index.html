@@ -393,7 +393,7 @@ textarea.fi{resize:vertical;min-height:60px}
   <header class="tb">
     <div class="tb-l">
       <button class="mbtn" id="mbtn">☰</button>
-      <span class="bc" id="bc">แดชบอร์ด</span>
+      <span class="bc" id="bc">แดชบอร์ด</span><span id="demoBadge" style="display:none;background:#F59E0B;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px">DEMO</span>
     </div>
     <div class="tb-r">
       <div class="srch">
@@ -450,7 +450,7 @@ textarea.fi{resize:vertical;min-height:60px}
       </div>
       <div class="tw">
       <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
-      <tbody id="atb"><tr><td colspan="7" class="erow">⏳ กำลังโหลด...</td></tr></tbody></table>
+      <tbody id="atb"><tr><td colspan="7" class="erow">⏳ กำลังโหลดข้อมูล...</td></tr></tbody></table>
     </div>
   </div>
 
@@ -492,6 +492,22 @@ textarea.fi{resize:vertical;min-height:60px}
   <!-- SETTINGS -->
   <div class="pg" id="pg-settings">
     <div class="ph"><h1>ตั้งค่าระบบ</h1></div>
+    <div class="setcard" style="margin-bottom:16px">
+      <h3>🎮 Demo Mode</h3>
+      <p style="font-size:13px;color:var(--g600);margin-bottom:14px">เปิด Demo เพื่อทดลองระบบด้วยข้อมูลตัวอย่าง โดยไม่ต้องเชื่อมต่อ Google Sheets</p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div id="demoStatus" style="font-size:14px;font-weight:600"></div>
+        <button class="bp" id="btnDemoOn" onclick="setDemoMode(true)" style="background:#F59E0B">
+          🎮 เปิด Demo Mode
+        </button>
+        <button class="bs" id="btnDemoOff" onclick="setDemoMode(false)">
+          ✕ ปิด Demo / ใช้ข้อมูลจริง
+        </button>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--g50);border-radius:8px;font-size:12px;color:var(--g400)">
+        ⚠️ ข้อมูล Demo จะไม่บันทึกลง Google Sheets — ใช้เพื่อทดลองระบบเท่านั้น
+      </div>
+    </div>
     <div class="setcard">
       <h3>🔗 เชื่อมต่อ Google Sheets + GAS</h3>
       <div class="fg"><label>Google Apps Script URL</label>
@@ -693,6 +709,10 @@ textarea.fi{resize:vertical;min-height:60px}
 
 <script>
 'use strict';
+// Default to demo mode if first time
+if(localStorage.getItem('demoMode')===null && !localStorage.getItem('gasUrl')){
+  localStorage.setItem('demoMode','true');
+}
 
 // ── Handle OAuth token from redirect ──
 (function(){
@@ -719,31 +739,7 @@ let DATA=[], EDIT=null, CBLD=null, CROOM=null, GF='all';
 const gasUrl=()=>localStorage.getItem('gasUrl')||'';
 const $=id=>document.getElementById(id);
 
-// ── SAMPLE ──
-function sample(){
-  const defs=[
-    {b:'A',r:'101',g:'ม.1'},{b:'A',r:'102',g:'ม.1'},{b:'A',r:'103',g:'ม.2'},
-    {b:'B',r:'201',g:'ม.3'},{b:'B',r:'202',g:'ม.3'},{b:'B',r:'203',g:'ม.4'},
-    {b:'C',r:'301',g:'ม.5'},{b:'C',r:'302',g:'ม.6'},
-    {b:'D',r:'401',g:'ม.6'},{b:'D',r:'คอม',g:'ห้องพิเศษ'},
-  ];
-  const its=[['คอมพิวเตอร์ Dell','อุปกรณ์ไอที'],['โปรเจกเตอร์ Epson','อุปกรณ์ไอที'],
-    ['โต๊ะนักเรียน','เฟอร์นิเจอร์'],['เก้าอี้นักเรียน','เฟอร์นิเจอร์'],
-    ['กระดานไวท์บอร์ด','อุปกรณ์การสอน'],['ทีวี Samsung','อุปกรณ์ไอที'],
-    ['พัดลม','ครุภัณฑ์สำนักงาน'],['ตู้ล็อคเกอร์','เฟอร์นิเจอร์']];
-  const sts=['ดี','ดี','ดี','ดี','ชำรุด','รอซ่อม'];
-  let n=1,out=[];
-  defs.forEach(d=>{
-    for(let i=0;i<3+Math.floor(Math.random()*3);i++){
-      const [nm,cat]=its[Math.floor(Math.random()*its.length)];
-      out.push({id:`KBI-${d.b}${d.r.replace(/\D/g,'').padStart(3,'0')}-${String(n++).padStart(3,'0')}`,
-        name:nm,category:cat,building:d.b,room:d.r,grade:d.g,
-        qty:cat==='เฟอร์นิเจอร์'?35:1,status:sts[Math.floor(Math.random()*sts.length)],
-        brand:'',serial:'',year:'',note:'',imageUrl:''});
-    }
-  });
-  return out;
-}
+// ── SAMPLE ถูกเอาออกแล้ว — ใช้ข้อมูลจริงจาก Google Sheets เท่านั้น ──
 
 // ── DATA ──
 function loadJsonp(url){
@@ -757,11 +753,62 @@ function loadJsonp(url){
     setTimeout(()=>{if(window[cb]){reject(new Error('timeout'));delete window[cb];sc.remove();}},10000);
   });
 }
+
+// ── DEMO DATA ──
+function sample(){
+  const defs=[
+    {b:'A',r:'101',g:'ม.1'},{b:'A',r:'102',g:'ม.1'},{b:'A',r:'103',g:'ม.2'},
+    {b:'B',r:'201',g:'ม.3'},{b:'B',r:'202',g:'ม.3'},{b:'B',r:'203',g:'ม.4'},
+    {b:'C',r:'301',g:'ม.5'},{b:'C',r:'302',g:'ม.6'},
+    {b:'D',r:'401',g:'ม.6'},{b:'D',r:'คอม',g:'ห้องพิเศษ'},
+  ];
+  const its=[
+    ['คอมพิวเตอร์ Dell','อุปกรณ์ไอที'],['โปรเจกเตอร์ Epson','อุปกรณ์ไอที'],
+    ['โต๊ะนักเรียน','เฟอร์นิเจอร์'],['เก้าอี้นักเรียน','เฟอร์นิเจอร์'],
+    ['กระดานไวท์บอร์ด','อุปกรณ์การสอน'],['ทีวี Samsung 55"','อุปกรณ์ไอที'],
+    ['พัดลมติดผนัง','ครุภัณฑ์สำนักงาน'],['ตู้ล็อคเกอร์','เฟอร์นิเจอร์'],
+    ['ลำโพงห้องเรียน','อุปกรณ์การสอน'],['เครื่องปรับอากาศ','ครุภัณฑ์สำนักงาน'],
+  ];
+  const sts=['ดี','ดี','ดี','ดี','ชำรุด','รอซ่อม'];
+  let n=1,out=[];
+  defs.forEach(d=>{
+    for(let i=0;i<3+Math.floor(Math.random()*3);i++){
+      const [nm,cat]=its[Math.floor(Math.random()*its.length)];
+      out.push({
+        id:'KBI-'+d.b+d.r.replace(/[^0-9]/g,'').padStart(3,'0')+'-'+String(n++).padStart(3,'0'),
+        name:nm,category:cat,building:d.b,room:d.r,grade:d.g,
+        qty:cat==='เฟอร์นิเจอร์'?35:1,
+        status:sts[Math.floor(Math.random()*sts.length)],
+        brand:'',serial:'',year:'2565',note:'',imageUrl:''
+      });
+    }
+  });
+  return out;
+}
+function isDemoMode(){ return localStorage.getItem('demoMode')==='true'; }
+
 async function load(){
+  // ── Demo Mode ──
+  if(isDemoMode()){
+    DATA = sample();
+    _bldg={A:{c:'#3B82F6',l:'อาคาร A'},B:{c:'#10B981',l:'อาคาร B'},C:{c:'#F59E0B',l:'อาคาร C'},D:{c:'#EF4444',l:'อาคาร D'}};
+    _cats=[{name:'อุปกรณ์ไอที',icon:'💻'},{name:'อุปกรณ์การสอน',icon:'📐'},{name:'เฟอร์นิเจอร์',icon:'🪑'},{name:'ครุภัณฑ์สำนักงาน',icon:'🗄️'},{name:'อื่น ๆ',icon:'📦'}];
+    _grades=[{name:'ม.1'},{name:'ม.2'},{name:'ม.3'},{name:'ม.4'},{name:'ม.5'},{name:'ม.6'},{name:'ห้องพิเศษ'}];
+    const seen={};
+    DATA.forEach(a=>{
+      const k=a.building+'|'+a.room;
+      if(!seen[k]){seen[k]=true;_rooms.push({building:a.building,room:a.room,grade:a.grade});}
+    });
+    return;
+  }
+  // ── Real Mode ──
+  const url = gasUrl();
+  if(!url){
+    toast('⚠️ กรุณาตั้งค่า GAS URL หรือเปิด Demo Mode ในเมนูตั้งค่า','er');
+    await loadConfig();
+    return;
+  }
   await loadConfig();
-  // ถ้า DATA ยังว่าง (ไม่มี GAS หรือโหลดไม่ได้) ใช้ sample
-  if(!DATA.length) DATA=sample();
-  // ถ้า rooms ว่าง สร้างจาก DATA
   if(_rooms.length===0 && DATA.length>0){
     const seen={};
     DATA.forEach(a=>{
@@ -779,9 +826,8 @@ function gasPost(payload){
 }
 async function persist(asset){
   const url=gasUrl();
-  if(url){
-    try{ await gasPost({action:EDIT?'updateAsset':'addAsset',data:asset}); }catch(e){}
-  }
+  if(!url){ toast('⚠️ ยังไม่ได้ตั้งค่า GAS URL','er'); return; }
+  try{ await gasPost({action:EDIT?'updateAsset':'addAsset',data:asset}); }catch(e){}
   if(EDIT){const i=DATA.findIndex(a=>a.id===EDIT);if(i>-1)DATA[i]={...asset,id:EDIT};}
   else{asset.id='KBI-'+Date.now();DATA.push(asset);}
 }
@@ -950,6 +996,7 @@ function renderUsers(){
 
 // ── SETTINGS ──
 function initCfg(){
+  updateDemoUI();
   $('cfgGas').value=localStorage.getItem('gasUrl')||'';
   $('cfgSheet').value=localStorage.getItem('sheetId')||'10MOiT5WO1ysVYZhz1W_V2ibMUqOtoSvEXqqVBueScCw';
   $('cfgDrive').value=localStorage.getItem('driveId')||'1Vt6J4IJhajG6rA0Gk7Lz2HPBFcK0OATW';
@@ -1118,9 +1165,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   initUpload();
   // Sync custom config
   syncDropdowns();
+  // Show demo badge
+  if(isDemoMode()){const b=document.getElementById('demoBadge');if(b)b.style.display='inline-block';}
 
   // Load
-  toast('⏳ กำลังโหลดข้อมูล...');
+  toast('⏳ กำลังโหลดข้อมูลจาก Google Sheets...');
   await load();
   renderDash();
   toast('✅ โหลดข้อมูลเรียบร้อย','ok');
@@ -2075,6 +2124,32 @@ async function delGrade(i){
   await gasConfigPost({action:'deleteGrade',name});
   renderManage(); syncDropdowns();
   toast('🗑️ ลบระดับชั้นแล้ว');
+}
+
+
+// ── DEMO MODE ──
+function setDemoMode(on){
+  localStorage.setItem('demoMode', on ? 'true' : 'false');
+  updateDemoUI();
+  toast(on ? '🎮 เปิด Demo Mode แล้ว — กำลังรีโหลด...' : '✅ ปิด Demo Mode แล้ว — กำลังรีโหลด...', 'ok');
+  setTimeout(()=>location.reload(), 1200);
+}
+
+function updateDemoUI(){
+  const demo = isDemoMode();
+  const status = document.getElementById('demoStatus');
+  const btnOn  = document.getElementById('btnDemoOn');
+  const btnOff = document.getElementById('btnDemoOff');
+  if(!status) return;
+  if(demo){
+    status.innerHTML = '<span style="color:#F59E0B">● Demo Mode เปิดอยู่</span>';
+    if(btnOn)  btnOn.style.display='none';
+    if(btnOff) btnOff.style.display='inline-flex';
+  } else {
+    status.innerHTML = '<span style="color:var(--green)">● ใช้ข้อมูลจริง</span>';
+    if(btnOn)  btnOn.style.display='inline-flex';
+    if(btnOff) btnOff.style.display='none';
+  }
 }
 
 </script>
