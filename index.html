@@ -1151,6 +1151,30 @@ function drvThumb(url){
   return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`:url;
 }
 
+
+// ── โหลดข้อมูลใหม่จาก Sheets (เรียกหลัง save/delete) ──
+async function reloadData(){
+  if(isDemoMode()) return; // Demo mode ไม่ต้อง reload
+  const url = gasUrl();
+  if(!url) return;
+  try{
+    const j = await loadJsonp(url+'?action=getAll');
+    if(j && j.success && j.data){
+      const d = j.data;
+      if(d.assets) DATA = d.assets;
+      // อัปเดต config ด้วย
+      if(d.buildings && d.buildings.length){
+        Object.keys(_bldg).forEach(k=>delete _bldg[k]);
+        d.buildings.forEach(b=>{ _bldg[b.code]={c:b.color||'#888',l:b.label||'อาคาร '+b.code}; });
+        Object.assign(BLDG, _bldg);
+      }
+      if(d.rooms) _rooms = d.rooms.map(r=>({building:r.building,room:r.room,grade:r.grade}));
+      if(d.categories) _cats = d.categories.map(c=>({name:c.name,icon:c.icon||'📦'}));
+      if(d.grades) _grades = d.grades.map(g=>({name:g.name}));
+    }
+  }catch(e){ console.warn('reloadData error:',e); }
+}
+
 async function saveAsset(){
   const a={id:$('mId').value.trim(),name:$('mName').value.trim(),
     category:$('mCat').value,building:$('mBld').value,room:$('mRoom').value.trim(),
@@ -1162,7 +1186,10 @@ async function saveAsset(){
   try{
     await persist(a);
     toast(EDIT?'✅ แก้ไขเรียบร้อย':'✅ เพิ่มสินทรัพย์แล้ว','ok');
-    closeModal(); refresh();
+    closeModal();
+    // โหลดข้อมูลใหม่จาก Sheets แล้วค่อย refresh หน้าจอ
+    await reloadData();
+    refresh();
   }catch(e){toast('เกิดข้อผิดพลาด: '+e.message,'er');}
   finally{btn.disabled=false;btn.textContent='💾 บันทึก';}
 }
@@ -1170,7 +1197,10 @@ async function saveAsset(){
 async function del(id){
   const a=DATA.find(x=>x.id===id);
   if(!a||!confirm(`ลบ "${a.name}" ?\nไม่สามารถยกเลิกได้`))return;
-  await remove(id); toast('🗑️ ลบแล้ว'); refresh();
+  await remove(id);
+  toast('🗑️ ลบแล้ว');
+  await reloadData();
+  refresh();
 }
 
 // ── PAGE NAV ──
@@ -2102,7 +2132,7 @@ async function addBuilding(){
   await gasConfigPost({action:'addBuilding',data:{code,label:name,color:selectedBldColor}});
   document.getElementById('newBldCode').value='';
   document.getElementById('newBldName').value='';
-  renderManage(); syncDropdowns();
+  await reloadData(); renderManage(); syncDropdowns();
   toast('✅ เพิ่มอาคาร '+name+' แล้ว','ok');
 }
 
@@ -2112,7 +2142,7 @@ async function editBuilding(code){
   if(newName===null) return;
   _bldg[code].l = newName.trim() || info.l;
   await gasConfigPost({action:'updateBuilding',data:{code,label:_bldg[code].l,color:info.c}});
-  renderManage(); syncDropdowns();
+  await reloadData(); renderManage(); syncDropdowns();
   toast('✅ แก้ไขอาคาร '+code+' แล้ว','ok');
 }
 
