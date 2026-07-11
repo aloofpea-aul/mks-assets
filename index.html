@@ -341,6 +341,33 @@ textarea.fi{resize:vertical;min-height:60px}
   text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
   display:flex;align-items:center;gap:6px}
 .bldg-color-swatch{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* ===== CATEGORY DETAIL ===== */
+.cat-detail-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.cat-detail-icon{font-size:40px;line-height:1}
+.cat-detail-title{font-size:20px;font-weight:800;color:var(--navy)}
+.cat-detail-sub{font-size:13px;color:var(--g400);margin-top:2px}
+.cat-stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.cat-stat{background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--sh);text-align:center}
+.cat-stat-val{font-size:22px;font-weight:800;color:var(--navy);display:block}
+.cat-stat-lbl{font-size:11px;color:var(--g400);margin-top:3px;display:block}
+.cat-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.cat-card-item{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;
+  cursor:pointer;transition:transform .2s}
+.cat-card-item:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.cat-card-img{width:100%;height:100px;object-fit:cover;background:var(--g100);
+  display:flex;align-items:center;justify-content:center;font-size:32px}
+.cat-card-img img{width:100%;height:100%;object-fit:cover}
+.cat-card-info{padding:10px}
+.cat-card-name{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-card-sub{font-size:11px;color:var(--g400);margin-top:2px}
+.cat-card-badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-top:4px}
+
+/* Category cards on main page */
+.ccard{position:relative;overflow:hidden}
+.ccard-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--navy);opacity:.15;border-radius:0 0 var(--r) var(--r)}
+.ccard-status-row{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.ccard-s{font-size:10px;padding:1px 6px;border-radius:20px;font-weight:600}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -609,6 +636,51 @@ textarea.fi{resize:vertical;min-height:60px}
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- CATEGORY DETAIL PAGE -->
+  <div class="pg" id="pg-catdetail">
+    <div class="ph">
+      <button class="bbk" id="catDetailBk">← กลับ</button>
+      <div class="cat-detail-header" style="flex:1;margin-bottom:0">
+        <div class="cat-detail-icon" id="catDetailIcon">📦</div>
+        <div>
+          <div class="cat-detail-title" id="catDetailTitle">ประเภทสินทรัพย์</div>
+          <div class="cat-detail-sub" id="catDetailSub"></div>
+        </div>
+      </div>
+      <button class="bp" onclick="openModal()">+ เพิ่ม</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="cat-stats-row" id="catDetailStats"></div>
+
+    <!-- Status breakdown bar -->
+    <div style="background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--g600);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">สถานะสินทรัพย์</div>
+      <div id="catStatusBar" style="display:flex;border-radius:8px;overflow:hidden;height:14px;margin-bottom:10px"></div>
+      <div id="catStatusLegend" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+    </div>
+
+    <!-- Toggle view -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--navy)">รายการทั้งหมด</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn-export" id="viewGrid" onclick="setCatView('grid')" style="padding:5px 10px">⊞ กริด</button>
+        <button class="btn-export" id="viewTable" onclick="setCatView('table')" style="padding:5px 10px">☰ ตาราง</button>
+      </div>
+    </div>
+
+    <!-- Grid view -->
+    <div class="cat-cards-grid" id="catDetailGrid"></div>
+
+    <!-- Table view -->
+    <div class="tw" id="catDetailTable" style="display:none">
+      <table class="dt">
+        <thead><tr><th>รหัส</th><th>ชื่อ</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+        <tbody id="catDetailTbody"></tbody>
+      </table>
     </div>
   </div>
 </main>
@@ -905,14 +977,35 @@ function renderAssets(){
 
 // ── CATEGORIES ──
 function renderCats(){
-  const counts={};
-  DATA.forEach(a=>{counts[a.category]=(counts[a.category]||0)+1;});
-  Object.keys(CATIC).forEach(c=>{if(!counts[c])counts[c]=0;});
-  $('cgrid').innerHTML=Object.entries(counts).map(([c,n])=>`
-    <div class="ccard" onclick="goAssets('',c,'','')">
-      <div class="ccic">${CATIC[c]||'📦'}</div>
-      <div class="ccnm">${c}</div><div class="cccnt">${n} รายการ</div>
-    </div>`).join('');
+  const cats = getCATS();
+  const stColors={ดี:'#10B981',ชำรุด:'#EF4444',รอซ่อม:'#F59E0B',จำหน่าย:'#94A3B8'};
+  
+  $('cgrid').innerHTML = cats.map(c => {
+    const items = DATA.filter(a=>a.category===c.name);
+    const total = items.length;
+    const good  = items.filter(a=>a.status==='ดี').length;
+    const repair= items.filter(a=>a.status==='ชำรุด'||a.status==='รอซ่อม').length;
+    const rooms = new Set(items.map(a=>a.building+'|'+a.room)).size;
+    const pct   = total>0 ? Math.round(good/total*100) : 0;
+    
+    // Status mini badges
+    const stBadges = Object.entries({ดี:stColors['ดี'],ชำรุด:stColors['ชำรุด'],รอซ่อม:stColors['รอซ่อม']})
+      .map(([s,col])=>{
+        const n=items.filter(a=>a.status===s).length;
+        return n>0?`<span class="ccard-s" style="background:${col}22;color:${col}">${s} ${n}</span>`:'';
+      }).join('');
+
+    return `<div class="ccard" onclick="openCatDetail('${c.name}')">
+      <div class="ccic">${c.icon||'📦'}</div>
+      <div class="ccnm">${c.name}</div>
+      <div class="cccnt">${total} รายการ · ${rooms} ห้อง</div>
+      <div class="ccard-status-row">${stBadges||'<span style="font-size:10px;color:var(--g400)">ไม่มีข้อมูล</span>'}</div>
+      ${total>0?`<div style="margin-top:8px;background:var(--g100);border-radius:20px;height:5px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:#10B981;border-radius:20px;transition:width .6s ease"></div>
+      </div>
+      <div style="font-size:10px;color:var(--g400);margin-top:3px">สภาพดี ${pct}%</div>`:''}
+    </div>`;
+  }).join('') || '<div style="text-align:center;color:var(--g400);padding:32px">ไม่มีประเภทสินทรัพย์</div>';
 }
 
 // ── ALL ROOMS ──
@@ -1023,8 +1116,9 @@ function openModal(id=null){
     prvImg(a.imageUrl);
   } else {
     ['mId','mName','mRoom','mBrand','mSerial','mYear','mNote','mImg'].forEach(i=>$(i).value='');
-    $('mCat').value=''; $('mBld').value=CBLD||''; $('mGrd').value='';
+    $('mCat').value=curCat||''; $('mBld').value=CBLD||''; $('mGrd').value='';
     $('mQty').value=1; $('mSt').value='ดี'; $('ipv').innerHTML='';
+    document.getElementById('uploadStatus').textContent='';
     if(CROOM) $('mRoom').value=CROOM;
   }
   $('modal').classList.add('open');
@@ -1080,7 +1174,7 @@ function refresh(){
   const pg=document.querySelector('.pg.on')?.id?.replace('pg-','');
   if(pg==='dashboard')renderDash();
   else if(pg==='assets')renderAssets();
-  else if(pg==='cats')renderCats();
+  else if(pg==='cats'){renderCats();curCat='';}
   else if(pg==='rooms')renderAllRooms();
   else if(pg==='room'&&CROOM)goRoom(CBLD,CROOM,BLDG[CBLD]?.l||'');
   updStats();
@@ -1108,7 +1202,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       setBc(el.querySelector('.ni-tx')?.textContent||pg);
       if(pg==='dashboard')renderDash();
       else if(pg==='assets'){renderAssets();}
-      else if(pg==='cats')renderCats();
+      else if(pg==='cats'){renderCats();curCat='';}
       else if(pg==='rooms')renderAllRooms();
       else if(pg==='settings')initCfg();
       else if(pg==='manage'){renderManage();}
@@ -1149,6 +1243,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
   // Back
   $('bldBk').onclick=()=>{showPg('dashboard');setBc('แดชบอร์ด');renderDash();};
+  $('catDetailBk').onclick=()=>{showPg('cats');setBc('ประเภทสินทรัพย์');renderCats();};
   $('roomBk').onclick=()=>{if(CBLD)goBld(CBLD);else{showPg('dashboard');setBc('แดชบอร์ด');}};
 
   // Settings save
@@ -2149,6 +2244,118 @@ function updateDemoUI(){
     status.innerHTML = '<span style="color:var(--green)">● ใช้ข้อมูลจริง</span>';
     if(btnOn)  btnOn.style.display='inline-flex';
     if(btnOff) btnOff.style.display='none';
+  }
+}
+
+
+// ── CATEGORY DETAIL ──
+let curCat = '';
+let catView = 'grid';
+
+function openCatDetail(catName){
+  curCat = catName;
+  const cat = getCATS().find(c=>c.name===catName) || {name:catName,icon:'📦'};
+  const items = DATA.filter(a=>a.category===catName);
+  const stColors={ดี:'#10B981',ชำรุด:'#EF4444',รอซ่อม:'#F59E0B',จำหน่าย:'#94A3B8'};
+
+  // Header
+  $('catDetailIcon').textContent = cat.icon||'📦';
+  $('catDetailTitle').textContent = catName;
+  $('catDetailSub').textContent = items.length+' รายการ ใน '+new Set(items.map(a=>a.building+'|'+a.room)).size+' ห้องเรียน';
+
+  // Stats
+  const totalQty = items.reduce((s,a)=>s+(parseInt(a.qty)||0),0);
+  const rooms = new Set(items.map(a=>a.building+'|'+a.room)).size;
+  const buildings = new Set(items.map(a=>a.building)).size;
+  const good = items.filter(a=>a.status==='ดี').length;
+  const repair = items.filter(a=>a.status==='ชำรุด'||a.status==='รอซ่อม').length;
+  $('catDetailStats').innerHTML = [
+    ['📦',items.length,'รายการ'],
+    ['🔢',totalQty,'จำนวนรวม'],
+    ['🚪',rooms,'ห้องเรียน'],
+    ['🏫',buildings,'อาคาร'],
+    ['✅',good,'สภาพดี'],
+    ['⚠️',repair,'รอซ่อม'],
+  ].map(([ic,v,l])=>`<div class="cat-stat">
+    <span style="font-size:20px">${ic}</span>
+    <span class="cat-stat-val">${v}</span>
+    <span class="cat-stat-lbl">${l}</span>
+  </div>`).join('');
+
+  // Status bar
+  const total = items.length||1;
+  const stCounts = {ดี:0,ชำรุด:0,รอซ่อม:0,จำหน่าย:0};
+  items.forEach(a=>{if(stCounts[a.status]!==undefined)stCounts[a.status]++;});
+  $('catStatusBar').innerHTML = Object.entries(stCounts).map(([s,n])=>
+    n>0?`<div style="flex:${n};background:${stColors[s]};transition:flex .6s ease" title="${s}: ${n}"></div>`:''
+  ).join('');
+  $('catStatusLegend').innerHTML = Object.entries(stCounts).map(([s,n])=>
+    `<div style="display:flex;align-items:center;gap:5px;font-size:12px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${stColors[s]}"></div>
+      ${s}: <strong>${n}</strong>
+    </div>`
+  ).join('');
+
+  // Pre-fill category in modal
+  renderCatItems(items);
+  showPg('catdetail');
+  setBc('ประเภทสินทรัพย์ › '+catName);
+}
+
+function setCatView(view){
+  catView = view;
+  const items = DATA.filter(a=>a.category===curCat);
+  renderCatItems(items);
+  $('viewGrid').style.borderColor = view==='grid'?'var(--navy)':'var(--g200)';
+  $('viewGrid').style.color = view==='grid'?'var(--navy)':'var(--g600)';
+  $('viewTable').style.borderColor = view==='table'?'var(--navy)':'var(--g200)';
+  $('viewTable').style.color = view==='table'?'var(--navy)':'var(--g600)';
+}
+
+function renderCatItems(items){
+  const stColors={ดี:'#10B981',ชำรุด:'#EF4444',รอซ่อม:'#F59E0B',จำหน่าย:'#94A3B8'};
+  
+  if(catView==='grid'){
+    $('catDetailGrid').style.display='grid';
+    $('catDetailTable').style.display='none';
+    if(!items.length){
+      $('catDetailGrid').innerHTML='<div style="text-align:center;color:var(--g400);padding:32px;grid-column:1/-1">ไม่มีรายการ</div>';
+      return;
+    }
+    $('catDetailGrid').innerHTML = items.map(a=>{
+      const thumb = a.imageUrl ? 
+        (a.imageUrl.match(/\/d\/([^\/]+)/)?
+          `https://drive.google.com/thumbnail?id=${a.imageUrl.match(/\/d\/([^\/]+)/)[1]}&sz=w200`:a.imageUrl)
+        : '';
+      return `<div class="cat-card-item" onclick="goRoom('${a.building}','${a.room}','${(getBLDG()[a.building]||{}).l||''}')">
+        <div class="cat-card-img">
+          ${thumb?`<img src="${thumb}" onerror="this.style.display='none';this.parentElement.textContent='${CATIC[a.category]||'📦'}'">`:CATIC[a.category]||'📦'}
+        </div>
+        <div class="cat-card-info">
+          <div class="cat-card-name" title="${a.name}">${a.name}</div>
+          <div class="cat-card-sub">อาคาร ${a.building} ห้อง ${a.room}</div>
+          <span class="cat-card-badge" style="background:${stColors[a.status]}22;color:${stColors[a.status]}">${a.status}</span>
+          <div class="cat-card-sub" style="margin-top:3px">จำนวน: ${a.qty} ${a.brand?'· '+a.brand:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    $('catDetailGrid').style.display='none';
+    $('catDetailTable').style.display='block';
+    $('catDetailTbody').innerHTML = items.length
+      ? items.map(a=>`<tr>
+          <td><code style="font-size:11px">${a.id}</code></td>
+          <td><strong>${a.name}</strong>${a.brand?`<br><small style="color:var(--g400)">${a.brand}</small>`:''}</td>
+          <td>อาคาร ${a.building} / ${a.room}<br><small style="color:var(--g400)">${a.grade}</small></td>
+          <td>${a.qty}</td>
+          <td><span class="stb s-${a.status}">${a.status}</span></td>
+          <td>
+            <button class="bic" onclick="openModal('${a.id}')">✏️</button>
+            <button class="bic" onclick="showQR('${a.id}')">🔲</button>
+            <button class="bic" onclick="del('${a.id}')">🗑️</button>
+          </td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="erow">ไม่มีรายการ</td></tr>';
   }
 }
 
