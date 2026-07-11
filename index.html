@@ -1548,10 +1548,10 @@ function showQR(id){
   document.getElementById('qrId').textContent=a.id+' | อาคาร '+a.building+' ห้อง '+a.room;
   const box=document.getElementById('qrBox');
   box.innerHTML='';
-  // Use QR Server API
-  const url='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(
-    `ID:${a.id}|ชื่อ:${a.name}|อาคาร:${a.building}|ห้อง:${a.room}|ประเภท:${a.category}`
-  );
+  // QR ชี้ไปหน้า asset.html?id=xxx (สแกนแล้วเห็นข้อมูลทันที)
+  const baseUrl = window.location.href.split('/').slice(0,-1).join('/')+'/asset.html';
+  const assetUrl = baseUrl+'?id='+encodeURIComponent(a.id);
+  const url='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(assetUrl);
   const img=document.createElement('img');
   img.src=url; img.width=200; img.height=200; img.id='qrImg';
   img.style.borderRadius='8px';
