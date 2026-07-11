@@ -396,10 +396,13 @@ textarea.fi{resize:vertical;min-height:60px}
       <div class="ni" data-pg="rooms"><span class="ni-ic">🚪</span><span class="ni-tx">ห้องเรียนทั้งหมด</span></div>
     </div>
     <div><span class="nlbl">อาคาร</span>
-      <div class="ni" data-bld="A"><span class="bdot" style="background:#3B82F6"></span><span class="ni-tx">อาคาร A</span></div>
-      <div class="ni" data-bld="B"><span class="bdot" style="background:#10B981"></span><span class="ni-tx">อาคาร B</span></div>
-      <div class="ni" data-bld="C"><span class="bdot" style="background:#F59E0B"></span><span class="ni-tx">อาคาร C</span></div>
-      <div class="ni" data-bld="D"><span class="bdot" style="background:#EF4444"></span><span class="ni-tx">อาคาร D</span></div>
+      <div id="sbBldList">
+        <!-- โหลดจาก _bldg อัตโนมัติ -->
+        <div class="ni" data-bld="A"><span class="bdot" style="background:#3B82F6"></span><span class="ni-tx">อาคาร A</span></div>
+        <div class="ni" data-bld="B"><span class="bdot" style="background:#10B981"></span><span class="ni-tx">อาคาร B</span></div>
+        <div class="ni" data-bld="C"><span class="bdot" style="background:#F59E0B"></span><span class="ni-tx">อาคาร C</span></div>
+        <div class="ni" data-bld="D"><span class="bdot" style="background:#EF4444"></span><span class="ni-tx">อาคาร D</span></div>
+      </div>
     </div>
     <div><span class="nlbl">ระบบ</span>
       <div class="ni" data-pg="stats"><span class="ni-ic">📊</span><span class="ni-tx">สถิติ & กราฟ</span></div>
@@ -1178,6 +1181,9 @@ async function reloadData(){
       }
       if(d.grades) _grades = d.grades.map(g=>({name:g.name}));
     }
+    // อัปเดต sidebar
+    updateSidebarBld();
+    syncDropdowns();
   }catch(e){ console.warn('reloadData error:',e); }
 }
 
@@ -1264,9 +1270,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
     };
   });
 
-  // Nav buildings
+  // Nav buildings (static ones)
   document.querySelectorAll('.ni[data-bld]').forEach(el=>{
     el.onclick=()=>goBld(el.dataset.bld);
+  });
+  // Dynamic sidebar update after load
+  document.getElementById('sbBldList').addEventListener('click', e=>{
+    const ni = e.target.closest('.ni[data-bld]');
+    if(ni) goBld(ni.dataset.bld);
   });
 
   // Grade filter
@@ -1315,6 +1326,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   syncDropdowns();
   // Show demo badge
   if(isDemoMode()){const b=document.getElementById('demoBadge');if(b)b.style.display='inline-block';}
+  // อัปเดต sidebar อาคาร
+  updateSidebarBld();
 
   // Load
   toast('⏳ กำลังโหลดข้อมูลจาก Google Sheets...');
@@ -2086,6 +2099,7 @@ function renderManage(){
 }
 
 function syncDropdowns(){
+  updateSidebarBld();
   const bldg = getBLDG();
   const grades = getGRADES();
   const cats = getCATS();
@@ -2413,6 +2427,25 @@ function renderCatItems(items){
         </tr>`).join('')
       : '<tr><td colspan="6" class="erow">ไม่มีรายการ</td></tr>';
   }
+}
+
+
+// ── อัปเดต Sidebar อาคาร จาก _bldg ──
+function updateSidebarBld(){
+  const container = document.getElementById('sbBldList');
+  if(!container) return;
+  
+  const bldg = getBLDG();
+  const keys = Object.keys(bldg);
+  if(keys.length === 0) return;
+  
+  container.innerHTML = keys.sort().map(code => {
+    const info = bldg[code];
+    return `<div class="ni" data-bld="${code}" onclick="goBld('${code}')">
+      <span class="bdot" style="background:${info.c}"></span>
+      <span class="ni-tx">${info.l}</span>
+    </div>`;
+  }).join('');
 }
 
 </script>
