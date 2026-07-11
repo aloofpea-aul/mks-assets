@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>ระบบสินทรัพย์ — โรงเรียนเมืองกระบี่</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -427,6 +430,16 @@ body.role-viewer .del-btn { display:none!important }
 body.role-viewer [data-pg="manage"] { display:none!important }
 body.role-viewer [data-pg="settings"] { display:none!important }
 body.role-viewer [data-pg="users"] { display:none!important }
+
+/* ===== DATE FIELDS ===== */
+.date-age{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#EDE9FE;color:#5B21B6;
+  border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;
+}
+.date-age.new{background:#D1FAE5;color:#065F46}
+.date-age.old{background:#FEE2E2;color:#991B1B}
+.date-age.mid{background:#FEF3C7;color:#92400E}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -550,7 +563,7 @@ body.role-viewer [data-pg="users"] { display:none!important }
         <button class="btn-export red" onclick="exportPDF()">📄 Export PDF</button>
       </div>
       <div class="tw">
-      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อสินทรัพย์</th><th>ประเภท</th><th>อาคาร/ห้อง</th><th>จำนวน</th><th>สถานะ</th><th>อายุใช้งาน</th><th>จัดการ</th></tr></thead>
       <tbody id="atb"><tr><td colspan="7" class="erow">⏳ กำลังโหลดข้อมูล...</td></tr></tbody></table>
     </div>
   </div>
@@ -585,7 +598,7 @@ body.role-viewer [data-pg="users"] { display:none!important }
     </div>
     <div class="rstats" id="rstats"></div>
     <div class="tw">
-      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>จำนวน</th><th>สถานะ</th><th>รูป</th><th>จัดการ</th></tr></thead>
+      <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>จำนวน</th><th>สถานะ</th><th>รูป</th><th>ใช้งานมา</th><th>จัดการ</th></tr></thead>
       <tbody id="rtb"><tr><td colspan="7" class="erow">ไม่มีข้อมูล</td></tr></tbody></table>
     </div>
   </div>
@@ -806,8 +819,20 @@ body.role-viewer [data-pg="users"] { display:none!important }
         <div class="fg"><label>หมายเลขครุภัณฑ์</label><input class="fi" id="mSerial" placeholder="ทะเบียนครุภัณฑ์"></div>
       </div>
       <div class="fr">
-        <div class="fg"><label>ปีที่ได้มา</label><input class="fi" id="mYear" placeholder="เช่น 2565"></div>
+        <div class="fg"><label>ปีที่ได้มา (พ.ศ.)</label><input class="fi" id="mYear" placeholder="เช่น 2565"></div>
         <div class="fg"><label>หมายเหตุ</label><input class="fi" id="mNote" placeholder="รายละเอียดเพิ่มเติม"></div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label>📅 วันที่รับทรัพย์สิน</label>
+          <input class="fi" type="date" id="mDateReceived" placeholder="วันที่รับเข้า">
+          <span class="fhint">วันที่ซื้อ/ได้รับมา</span>
+        </div>
+        <div class="fg">
+          <label>📅 วันที่เริ่มใช้งาน</label>
+          <input class="fi" type="date" id="mDateUsed" placeholder="วันที่เริ่มใช้">
+          <span class="fhint">วันที่นำไปใช้งานจริง</span>
+        </div>
       </div>
       <div class="fg">
         <label>รูปภาพ</label>
@@ -1085,6 +1110,7 @@ function renderAssets(){
     <td>${a.building}/${a.room}<br><small style="color:#94A3B8">${a.grade}</small></td>
     <td>${a.qty}</td>
     <td><span class="stb s-${a.status}">${a.status}</span></td>
+    <td>${(a.dateReceived||a.dateUsed)?('<div style="font-size:10px;color:var(--g400)">'+(a.dateReceived?'รับ: '+formatDateTH(a.dateReceived):'')+'</div>'+(a.dateUsed?'<span class="date-age '+ageClass(a.dateUsed)+'">'+calcAge(a.dateUsed)+'</span>':'')):'<span style="color:var(--g400)">-</span>'}</td>
     <td><button class="bic" onclick="openModal('${a.id}')" title="แก้ไข">✏️</button>
         <button class="bic" onclick="showQR('${a.id}')" title="QR Code">🔲</button>
         <button class="bic" onclick="del('${a.id}')" title="ลบ">🗑️</button></td></tr>`).join('');
@@ -1228,9 +1254,11 @@ function openModal(id=null){
     $('mQty').value=a.qty; $('mSt').value=a.status; $('mBrand').value=a.brand||'';
     $('mSerial').value=a.serial||''; $('mYear').value=a.year||'';
     $('mNote').value=a.note||''; $('mImg').value=a.imageUrl||'';
+    $('mDateReceived').value=a.dateReceived||'';
+    $('mDateUsed').value=a.dateUsed||'';
     prvImg(a.imageUrl);
   } else {
-    ['mId','mName','mRoom','mBrand','mSerial','mYear','mNote','mImg'].forEach(i=>$(i).value='');
+    ['mId','mName','mRoom','mBrand','mSerial','mYear','mNote','mImg','mDateReceived','mDateUsed'].forEach(i=>$(i).value='');
     $('mCat').value=curCat||''; $('mBld').value=CBLD||''; $('mGrd').value='';
     $('mQty').value=1; $('mSt').value='ดี'; $('ipv').innerHTML='';
     document.getElementById('uploadStatus').textContent='';
@@ -1286,7 +1314,8 @@ async function saveAsset(){
     category:$('mCat').value,building:$('mBld').value,room:$('mRoom').value.trim(),
     grade:$('mGrd').value,qty:parseInt($('mQty').value)||1,status:$('mSt').value,
     brand:$('mBrand').value.trim(),serial:$('mSerial').value.trim(),
-    year:$('mYear').value.trim(),note:$('mNote').value.trim(),imageUrl:$('mImg').value.trim()};
+    year:$('mYear').value.trim(),note:$('mNote').value.trim(),imageUrl:$('mImg').value.trim(),
+    dateReceived:$('mDateReceived').value,dateUsed:$('mDateUsed').value};
   if(!a.name||!a.building||!a.room){toast('กรุณากรอกชื่อ, อาคาร และห้อง','er');return;}
   const btn=$('msave'); btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
   try{
@@ -2753,6 +2782,40 @@ async function deleteUser(email, name){
   await gasWrite({action:'deleteUser',email});
   toast('🗑️ ลบผู้ใช้แล้ว');
   renderUsers();
+}
+
+
+// ── DATE HELPERS ──
+function calcAge(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  const now = new Date();
+  const days = Math.floor((now - d) / (1000*60*60*24));
+  if(days < 0) return '';
+  if(days < 30) return days+'วัน';
+  if(days < 365){
+    const m = Math.floor(days/30);
+    return m+'เดือน '+(days%30)+'วัน';
+  }
+  const y = Math.floor(days/365);
+  const m = Math.floor((days%365)/30);
+  return y+'ปี '+(m>0?m+'เดือน':'');
+}
+
+function formatDateTH(dateStr){
+  if(!dateStr) return '-';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return dateStr;
+  return d.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
+}
+
+function ageClass(dateStr){
+  if(!dateStr) return '';
+  const days = Math.floor((new Date()-new Date(dateStr))/(1000*60*60*24));
+  if(days < 365) return 'new';
+  if(days < 365*5) return 'mid';
+  return 'old';
 }
 
 </script>
