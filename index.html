@@ -1326,12 +1326,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
   syncDropdowns();
   // Show demo badge
   if(isDemoMode()){const b=document.getElementById('demoBadge');if(b)b.style.display='inline-block';}
-  // อัปเดต sidebar อาคาร
-  updateSidebarBld();
+  // sidebar จะอัปเดตหลัง load() เสร็จแล้ว
 
   // Load
   toast('⏳ กำลังโหลดข้อมูลจาก Google Sheets...');
   await load();
+  // อัปเดต UI ทั้งหมดหลัง load เสร็จ
+  updateSidebarBld();
+  syncDropdowns();
   renderDash();
   toast('✅ โหลดข้อมูลเรียบร้อย','ok');
 });
@@ -2099,7 +2101,6 @@ function renderManage(){
 }
 
 function syncDropdowns(){
-  updateSidebarBld();
   const bldg = getBLDG();
   const grades = getGRADES();
   const cats = getCATS();
