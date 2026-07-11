@@ -313,6 +313,34 @@ textarea.fi{resize:vertical;min-height:60px}
 .upload-status.uploading{color:var(--amber)}
 .upload-status.done{color:var(--green)}
 .upload-status.fail{color:var(--red)}
+
+/* ===== MANAGE PAGE ===== */
+.manage-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:640px){.manage-grid{grid-template-columns:1fr}}
+.manage-card{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.manage-card h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px}
+.manage-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:340px;overflow-y:auto}
+.manage-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--g50);border-radius:var(--r2);border:1.5px solid var(--g200)}
+.manage-item-info{flex:1;min-width:0}
+.manage-item-name{font-size:14px;font-weight:700;color:var(--g800)}
+.manage-item-sub{font-size:11px;color:var(--g400);margin-top:1px}
+.manage-item-badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0}
+.manage-item-actions{display:flex;gap:4px;flex-shrink:0}
+.add-form{display:flex;gap:8px;flex-wrap:wrap}
+.add-form .fi{flex:1;min-width:100px}
+.add-form .bp{flex-shrink:0;padding:8px 14px}
+.color-dots{display:flex;gap:6px;margin-top:8px}
+.color-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all .15s}
+.color-dot.selected{border-color:var(--navy);transform:scale(1.2)}
+.section-divider{height:1px;background:var(--g200);margin:14px 0}
+.room-group{margin-bottom:12px}
+.room-group-title{font-size:12px;font-weight:700;color:var(--g400);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px}
+.bldg-color-swatch{width:10px;height:10px;border-radius:50%;display:inline-block}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -348,6 +376,7 @@ textarea.fi{resize:vertical;min-height:60px}
     </div>
     <div><span class="nlbl">ระบบ</span>
       <div class="ni" data-pg="stats"><span class="ni-ic">📊</span><span class="ni-tx">สถิติ & กราฟ</span></div>
+      <div class="ni" data-pg="manage"><span class="ni-ic">🏗️</span><span class="ni-tx">จัดการอาคาร/ห้อง</span></div>
       <div class="ni" data-pg="settings"><span class="ni-ic">⚙️</span><span class="ni-tx">ตั้งค่า</span></div>
       <div class="ni" data-pg="users"><span class="ni-ic">👥</span><span class="ni-tx">ผู้ดูแลระบบ</span></div>
     </div>
@@ -488,6 +517,83 @@ textarea.fi{resize:vertical;min-height:60px}
     <div class="ph"><h1>สถิติ & กราฟ</h1></div>
     <div class="stat-summary" id="statSummary"></div>
     <div class="chart-grid" id="chartGrid"></div>
+  </div>
+
+  <!-- MANAGE PAGE -->
+  <div class="pg" id="pg-manage">
+    <div class="ph"><h1>จัดการอาคารและห้องเรียน</h1></div>
+    <div class="manage-grid">
+      
+      <!-- อาคาร -->
+      <div class="manage-card">
+        <h3>🏫 อาคาร</h3>
+        <div class="manage-list" id="bldList"></div>
+        <div class="section-divider"></div>
+        <p style="font-size:12px;color:var(--g400);margin-bottom:10px">เพิ่มอาคารใหม่</p>
+        <div class="add-form">
+          <input class="fi" id="newBldCode" placeholder="รหัส เช่น E" maxlength="3" style="max-width:70px;text-transform:uppercase">
+          <input class="fi" id="newBldName" placeholder="ชื่ออาคาร เช่น อาคารเรียนรวม">
+          <button class="bp" onclick="addBuilding()">+ เพิ่ม</button>
+        </div>
+        <div class="color-dots" id="bldColorPicker">
+          <div class="color-dot selected" data-color="#3B82F6" style="background:#3B82F6" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#10B981" style="background:#10B981" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#F59E0B" style="background:#F59E0B" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#EF4444" style="background:#EF4444" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#8B5CF6" style="background:#8B5CF6" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#EC4899" style="background:#EC4899" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#06B6D4" style="background:#06B6D4" onclick="selectBldColor(this)"></div>
+          <div class="color-dot" data-color="#F97316" style="background:#F97316" onclick="selectBldColor(this)"></div>
+        </div>
+      </div>
+
+      <!-- ห้องเรียน -->
+      <div class="manage-card">
+        <h3>🚪 ห้องเรียน</h3>
+        <div class="manage-list" id="roomMngList"></div>
+        <div class="section-divider"></div>
+        <p style="font-size:12px;color:var(--g400);margin-bottom:10px">เพิ่มห้องเรียนใหม่</p>
+        <div class="add-form" style="flex-wrap:wrap;gap:8px">
+          <select class="fi" id="newRoomBld" style="max-width:110px">
+            <option value="">เลือกอาคาร</option>
+          </select>
+          <input class="fi" id="newRoomNum" placeholder="เลขห้อง เช่น 104" style="max-width:110px">
+          <select class="fi" id="newRoomGrade" style="max-width:110px">
+            <option value="">ระดับชั้น</option>
+            <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            <option>ม.4</option><option>ม.5</option><option>ม.6</option>
+            <option>ห้องพิเศษ</option>
+          </select>
+          <button class="bp" onclick="addRoom()">+ เพิ่ม</button>
+        </div>
+      </div>
+
+      <!-- ประเภทสินทรัพย์ -->
+      <div class="manage-card">
+        <h3>🏷️ ประเภทสินทรัพย์</h3>
+        <div class="manage-list" id="catMngList"></div>
+        <div class="section-divider"></div>
+        <p style="font-size:12px;color:var(--g400);margin-bottom:10px">เพิ่มประเภทใหม่</p>
+        <div class="add-form">
+          <input class="fi" id="newCatIcon" placeholder="Emoji" maxlength="4" style="max-width:70px;text-align:center">
+          <input class="fi" id="newCatName" placeholder="ชื่อประเภท เช่น เครื่องดนตรี">
+          <button class="bp" onclick="addCategory()">+ เพิ่ม</button>
+        </div>
+      </div>
+
+      <!-- ระดับชั้น -->
+      <div class="manage-card">
+        <h3>🎓 ระดับชั้นเรียน</h3>
+        <div class="manage-list" id="gradeMngList"></div>
+        <div class="section-divider"></div>
+        <p style="font-size:12px;color:var(--g400);margin-bottom:10px">เพิ่มระดับชั้นใหม่</p>
+        <div class="add-form">
+          <input class="fi" id="newGradeName" placeholder="เช่น ป.6, อนุบาล">
+          <button class="bp" onclick="addGrade()">+ เพิ่ม</button>
+        </div>
+      </div>
+
+    </div>
   </div>
 </main>
 
@@ -652,14 +758,17 @@ function loadJsonp(url){
   });
 }
 async function load(){
-  const url=gasUrl();
-  if(url){
-    try{
-      const j=await loadJsonp(url);
-      if(j&&j.data&&j.data.length){DATA=j.data;return;}
-    }catch(e){console.warn('JSONP:',e);}
+  await loadConfig();
+  // ถ้า DATA ยังว่าง (ไม่มี GAS หรือโหลดไม่ได้) ใช้ sample
+  if(!DATA.length) DATA=sample();
+  // ถ้า rooms ว่าง สร้างจาก DATA
+  if(_rooms.length===0 && DATA.length>0){
+    const seen={};
+    DATA.forEach(a=>{
+      const k=a.building+'|'+a.room;
+      if(!seen[k]){seen[k]=true;_rooms.push({building:a.building,room:a.room,grade:a.grade});}
+    });
   }
-  if(!DATA.length)DATA=sample();
 }
 function gasPost(payload){
   const url=gasUrl(); if(!url) return Promise.resolve({success:true});
@@ -955,6 +1064,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       else if(pg==='cats')renderCats();
       else if(pg==='rooms')renderAllRooms();
       else if(pg==='settings')initCfg();
+      else if(pg==='manage'){renderManage();}
       else if(pg==='stats')renderStats();
       else if(pg==='users')renderUsers();
     };
@@ -1006,6 +1116,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
   // Init upload
   initUpload();
+  // Sync custom config
+  syncDropdowns();
 
   // Load
   toast('⏳ กำลังโหลดข้อมูล...');
@@ -1580,6 +1692,389 @@ async function uploadToDrive(file){
       saveBtn.style.opacity = '1';
     }
   }
+}
+
+
+// ============================================================
+//  MANAGE PAGE — อาคาร, ห้องเรียน, ประเภท, ระดับชั้น
+// ============================================================
+
+// ── Config backed by Google Sheets ──
+// In-memory cache (โหลดจาก Sheets ตอน init)
+let _bldg = {};
+let _rooms = [];
+let _cats = [];
+let _grades = [];
+
+function getBLDG(){ return _bldg; }
+function getROOMS(){ return _rooms; }
+function getCATS(){ return _cats; }
+function getGRADES(){ return _grades; }
+
+// Save to Sheets via GAS
+async function gasConfigPost(payload){
+  const url = gasUrl(); if(!url) return {success:true};
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify(payload)});
+  }catch(e){}
+  return {success:true};
+}
+
+// Buildings
+async function saveBLDG(data){
+  _bldg = data;
+  // sync ทั้งหมดไปยัง Sheets — ลบหมดแล้วเพิ่มใหม่
+  // (ทำผ่าน addBuilding/deleteBuilding แทน)
+}
+// Rooms
+async function saveROOMS(data){ _rooms = data; }
+// Categories  
+async function saveCATS(data){ _cats = data; }
+// Grades
+async function saveGRADES(data){ _grades = data; }
+
+// Load all config from Sheets
+async function loadConfig(){
+  const url = gasUrl();
+  if(!url){
+    // Fallback defaults
+    _bldg = {A:{c:'#3B82F6',l:'อาคาร A'},B:{c:'#10B981',l:'อาคาร B'},C:{c:'#F59E0B',l:'อาคาร C'},D:{c:'#EF4444',l:'อาคาร D'}};
+    _rooms = [];
+    _cats = [{name:'อุปกรณ์ไอที',icon:'💻'},{name:'อุปกรณ์การสอน',icon:'📐'},{name:'เฟอร์นิเจอร์',icon:'🪑'},{name:'ครุภัณฑ์สำนักงาน',icon:'🗄️'},{name:'อื่น ๆ',icon:'📦'}];
+    _grades = [{name:'ม.1'},{name:'ม.2'},{name:'ม.3'},{name:'ม.4'},{name:'ม.5'},{name:'ม.6'},{name:'ห้องพิเศษ'}];
+    return;
+  }
+  try{
+    const j = await loadJsonp(url+'?action=getAll');
+    if(j && j.success && j.data){
+      const d = j.data;
+      // Buildings
+      _bldg = {};
+      (d.buildings||[]).forEach(b=>{ _bldg[b.code]={c:b.color||'#888',l:b.label||'อาคาร '+b.code}; });
+      // Rooms
+      _rooms = (d.rooms||[]).map(r=>({building:r.building,room:r.room,grade:r.grade}));
+      // Categories
+      _cats = (d.categories||[]).map(c=>({name:c.name,icon:c.icon||'📦'}));
+      // Grades
+      _grades = (d.grades||[]).map(g=>({name:g.name}));
+      // Assets
+      if(d.assets&&d.assets.length) DATA=d.assets;
+    }
+  }catch(e){
+    console.warn('loadConfig error:',e);
+    _bldg={A:{c:'#3B82F6',l:'อาคาร A'},B:{c:'#10B981',l:'อาคาร B'},C:{c:'#F59E0B',l:'อาคาร C'},D:{c:'#EF4444',l:'อาคาร D'}};
+    _cats=[{name:'อุปกรณ์ไอที',icon:'💻'},{name:'อุปกรณ์การสอน',icon:'📐'},{name:'เฟอร์นิเจอร์',icon:'🪑'},{name:'ครุภัณฑ์สำนักงาน',icon:'🗄️'},{name:'อื่น ๆ',icon:'📦'}];
+    _grades=[{name:'ม.1'},{name:'ม.2'},{name:'ม.3'},{name:'ม.4'},{name:'ม.5'},{name:'ม.6'},{name:'ห้องพิเศษ'}];
+  }
+}
+
+let selectedBldColor = '#3B82F6';
+
+function selectBldColor(el){
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedBldColor = el.dataset.color;
+}
+
+function renderManage(){
+  const bldg = getBLDG();
+  const rooms = getROOMS();
+  const cats = getCATS();
+  const grades = getGRADES();
+
+  // ── อาคาร ──
+  const bldList = document.getElementById('bldList');
+  bldList.innerHTML = Object.entries(bldg).length === 0 
+    ? '<div style="text-align:center;color:var(--g400);padding:16px">ยังไม่มีอาคาร</div>'
+    : Object.entries(bldg).map(([code, info]) => {
+    const cnt = DATA.filter(a=>a.building===code).length;
+    return `<div class="manage-item">
+      <div class="bldg-color-swatch" style="background:${info.c};width:14px;height:14px;border-radius:4px;flex-shrink:0"></div>
+      <div class="manage-item-info">
+        <div class="manage-item-name">${info.l}</div>
+        <div class="manage-item-sub">รหัส: ${code} · ${cnt} สินทรัพย์</div>
+      </div>
+      <span class="manage-item-badge" style="background:${info.c}22;color:${info.c}">${code}</span>
+      <div class="manage-item-actions">
+        <button class="bic" onclick="editBuilding('${code}')" title="แก้ไข">✏️</button>
+        <button class="bic" onclick="delBuilding('${code}')" title="ลบ">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update new room building dropdown
+  const sel = document.getElementById('newRoomBld');
+  sel.innerHTML = '<option value="">เลือกอาคาร</option>' +
+    Object.entries(bldg).map(([code,info])=>`<option value="${code}">${info.l} (${code})</option>`).join('');
+
+  // ── ห้องเรียน (จัดกลุ่มตามอาคาร) ──
+  const roomMngList = document.getElementById('roomMngList');
+  const byBld = {};
+  rooms.forEach(r => {
+    if(!byBld[r.building]) byBld[r.building] = [];
+    byBld[r.building].push(r);
+  });
+  roomMngList.innerHTML = Object.keys(byBld).length === 0
+    ? '<div style="text-align:center;color:var(--g400);padding:16px">ยังไม่มีห้องเรียน</div>'
+    : Object.entries(byBld).sort().map(([bld, rms]) => {
+    const color = (bldg[bld]||{}).c || '#888';
+    const label = (bldg[bld]||{}).l || 'อาคาร '+bld;
+    return `<div class="room-group">
+      <div class="room-group-title">
+        <span class="bldg-color-swatch" style="background:${color}"></span>${label}
+      </div>
+      ${rms.sort((a,z)=>a.room.localeCompare(z.room)).map(r => {
+        const cnt = DATA.filter(a=>a.building===r.building&&a.room===r.room).length;
+        return `<div class="manage-item" style="margin-bottom:5px">
+          <div class="manage-item-info">
+            <div class="manage-item-name">ห้อง ${r.room}</div>
+            <div class="manage-item-sub">${r.grade} · ${cnt} สินทรัพย์</div>
+          </div>
+          <div class="manage-item-actions">
+            <button class="bic" onclick="editRoom('${r.building}','${r.room}')" title="แก้ไข">✏️</button>
+            <button class="bic" onclick="delRoom('${r.building}','${r.room}')" title="ลบ">🗑️</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  // ── ประเภทสินทรัพย์ ──
+  const catMngList = document.getElementById('catMngList');
+  catMngList.innerHTML = cats.length === 0
+    ? '<div style="text-align:center;color:var(--g400);padding:16px">ยังไม่มีประเภท</div>'
+    : cats.map((c,i) => {
+    const cnt = DATA.filter(a=>a.category===c.name).length;
+    return `<div class="manage-item">
+      <div style="font-size:22px;flex-shrink:0">${c.icon||'📦'}</div>
+      <div class="manage-item-info">
+        <div class="manage-item-name">${c.name}</div>
+        <div class="manage-item-sub">${cnt} รายการ</div>
+      </div>
+      <div class="manage-item-actions">
+        <button class="bic" onclick="editCategory(${i})" title="แก้ไข">✏️</button>
+        <button class="bic" onclick="delCategory(${i})" title="ลบ">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── ระดับชั้น ──
+  const gradeMngList = document.getElementById('gradeMngList');
+  gradeMngList.innerHTML = grades.length === 0
+    ? '<div style="text-align:center;color:var(--g400);padding:16px">ยังไม่มีระดับชั้น</div>'
+    : grades.map((g,i) => {
+    const cnt = DATA.filter(a=>a.grade===g.name).length;
+    return `<div class="manage-item">
+      <div class="manage-item-info">
+        <div class="manage-item-name">${g.name}</div>
+        <div class="manage-item-sub">${cnt} สินทรัพย์</div>
+      </div>
+      <div class="manage-item-actions">
+        <button class="bic" onclick="editGrade(${i})" title="แก้ไข">✏️</button>
+        <button class="bic" onclick="delGrade(${i})" title="ลบ">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Sync BLDG global
+  Object.assign(BLDG, bldg);
+
+  // Update dropdowns everywhere
+  syncDropdowns();
+}
+
+function syncDropdowns(){
+  const bldg = getBLDG();
+  const grades = getGRADES();
+  const cats = getCATS();
+
+  // Update BLDG global
+  Object.keys(BLDG).forEach(k => delete BLDG[k]);
+  Object.assign(BLDG, bldg);
+
+  // Update CATIC global
+  Object.keys(CATIC).forEach(k => delete CATIC[k]);
+  cats.forEach(c => { CATIC[c.name] = c.icon||'📦'; });
+
+  // Update building selects
+  const bldOpts = '<option value="">เลือกอาคาร</option>' +
+    Object.entries(bldg).map(([code,info])=>`<option value="${code}">${info.l} (${code})</option>`).join('');
+  ['mBld','fBld','filterBuilding'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ const val=el.value; el.innerHTML=bldOpts; el.value=val; }
+  });
+
+  // Update category selects
+  const catOpts = '<option value="">เลือกประเภท</option>' +
+    cats.map(c=>`<option value="${c.name}">${c.icon||'📦'} ${c.name}</option>`).join('');
+  ['mCat','fCat','filterCategory'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ const val=el.value; el.innerHTML=catOpts; el.value=val; }
+  });
+
+  // Update grade selects
+  const gradeOpts = '<option value="">เลือกระดับ</option>' +
+    grades.map(g=>`<option value="${g.name}">${g.name}</option>`).join('');
+  ['mGrd'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ const val=el.value; el.innerHTML=gradeOpts; el.value=val; }
+  });
+
+  // Update grade filter buttons
+  const gf = document.getElementById('gf');
+  if(gf){
+    gf.innerHTML = '<button class="fb on" data-g="all">ทั้งหมด</button>' +
+      grades.map(g=>`<button class="fb" data-g="${g.name}">${g.name}</button>`).join('');
+    // Re-attach grade filter events
+    gf.onclick = e => {
+      const btn = e.target.closest('.fb'); if(!btn) return;
+      document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on'); GF = btn.dataset.g; renderDash();
+    };
+  }
+}
+
+// ── BUILDING CRUD ──
+async function addBuilding(){
+  const code = document.getElementById('newBldCode').value.trim().toUpperCase();
+  const name = document.getElementById('newBldName').value.trim();
+  if(!code||!name){ toast('กรุณากรอกรหัสและชื่ออาคาร','er'); return; }
+  if(_bldg[code]){ toast('รหัสอาคารนี้มีอยู่แล้ว','er'); return; }
+  _bldg[code] = {c:selectedBldColor, l:name};
+  await gasConfigPost({action:'addBuilding',data:{code,label:name,color:selectedBldColor}});
+  document.getElementById('newBldCode').value='';
+  document.getElementById('newBldName').value='';
+  renderManage(); syncDropdowns();
+  toast('✅ เพิ่มอาคาร '+name+' แล้ว','ok');
+}
+
+async function editBuilding(code){
+  const info = _bldg[code];
+  const newName = prompt('ชื่ออาคาร:', info.l);
+  if(newName===null) return;
+  _bldg[code].l = newName.trim() || info.l;
+  await gasConfigPost({action:'updateBuilding',data:{code,label:_bldg[code].l,color:info.c}});
+  renderManage(); syncDropdowns();
+  toast('✅ แก้ไขอาคาร '+code+' แล้ว','ok');
+}
+
+async function delBuilding(code){
+  const cnt = DATA.filter(a=>a.building===code).length;
+  const msg = cnt>0 ? `อาคาร ${code} มีสินทรัพย์ ${cnt} รายการ\nถ้าลบอาคารนี้ข้อมูลจะยังอยู่ใน Sheets\nยืนยันลบ?` : `ลบอาคาร ${code}?`;
+  if(!confirm(msg)) return;
+  delete _bldg[code];
+  await gasConfigPost({action:'deleteBuilding',code});
+  renderManage(); syncDropdowns();
+  toast('🗑️ ลบอาคาร '+code+' แล้ว');
+}
+
+// ── ROOM CRUD ──
+async function addRoom(){
+  const bld = document.getElementById('newRoomBld').value;
+  const num = document.getElementById('newRoomNum').value.trim();
+  const grade = document.getElementById('newRoomGrade').value;
+  if(!bld||!num||!grade){ toast('กรุณากรอกข้อมูลให้ครบ','er'); return; }
+  if(_rooms.find(r=>r.building===bld&&r.room===num)){ toast('ห้องนี้มีอยู่แล้ว','er'); return; }
+  _rooms.push({building:bld,room:num,grade});
+  await gasConfigPost({action:'addRoom',data:{building:bld,room:num,grade}});
+  document.getElementById('newRoomNum').value='';
+  document.getElementById('newRoomGrade').value='';
+  renderManage();
+  toast('✅ เพิ่มห้อง '+num+' อาคาร '+bld+' แล้ว','ok');
+}
+
+async function editRoom(bld, room){
+  const r = _rooms.find(x=>x.building===bld&&x.room===room);
+  if(!r) return;
+  const newGrade = prompt('ระดับชั้นของห้อง '+room+':', r.grade);
+  if(newGrade===null) return;
+  r.grade = newGrade.trim() || r.grade;
+  await gasConfigPost({action:'updateRoom',data:{building:bld,room,grade:r.grade}});
+  renderManage();
+  toast('✅ แก้ไขห้อง '+room+' แล้ว','ok');
+}
+
+async function delRoom(bld, room){
+  const cnt = DATA.filter(a=>a.building===bld&&a.room===room).length;
+  const msg = cnt>0 ? `ห้อง ${room} มีสินทรัพย์ ${cnt} รายการ\nยืนยันลบ?` : `ลบห้อง ${room}?`;
+  if(!confirm(msg)) return;
+  _rooms = _rooms.filter(r=>!(r.building===bld&&r.room===room));
+  await gasConfigPost({action:'deleteRoom',building:bld,room});
+  renderManage();
+  toast('🗑️ ลบห้อง '+room+' แล้ว');
+}
+
+// ── CATEGORY CRUD ──
+async function addCategory(){
+  const icon = document.getElementById('newCatIcon').value.trim() || '📦';
+  const name = document.getElementById('newCatName').value.trim();
+  if(!name){ toast('กรุณากรอกชื่อประเภท','er'); return; }
+  if(_cats.find(c=>c.name===name)){ toast('ประเภทนี้มีอยู่แล้ว','er'); return; }
+  _cats.push({name,icon});
+  await gasConfigPost({action:'addCategory',data:{name,icon}});
+  document.getElementById('newCatIcon').value='';
+  document.getElementById('newCatName').value='';
+  renderManage(); syncDropdowns();
+  toast('✅ เพิ่มประเภท '+name+' แล้ว','ok');
+}
+
+async function editCategory(i){
+  const oldName = _cats[i].name;
+  const newName = prompt('ชื่อประเภท:', _cats[i].name);
+  if(newName===null) return;
+  const newIcon = prompt('Emoji ไอคอน:', _cats[i].icon||'📦');
+  if(newIcon===null) return;
+  _cats[i].name = newName.trim() || _cats[i].name;
+  _cats[i].icon = newIcon.trim() || _cats[i].icon;
+  await gasConfigPost({action:'updateCategory',data:{name:_cats[i].name,icon:_cats[i].icon}});
+  renderManage(); syncDropdowns();
+  toast('✅ แก้ไขประเภทแล้ว','ok');
+}
+
+async function delCategory(i){
+  const name = _cats[i].name;
+  const cnt = DATA.filter(a=>a.category===name).length;
+  const msg = cnt>0 ? `ประเภท "${name}" มีสินทรัพย์ ${cnt} รายการ\nยืนยันลบ?` : `ลบประเภท "${name}"?`;
+  if(!confirm(msg)) return;
+  _cats.splice(i,1);
+  await gasConfigPost({action:'deleteCategory',name});
+  renderManage(); syncDropdowns();
+  toast('🗑️ ลบประเภทแล้ว');
+}
+
+// ── GRADE CRUD ──
+async function addGrade(){
+  const name = document.getElementById('newGradeName').value.trim();
+  if(!name){ toast('กรุณากรอกระดับชั้น','er'); return; }
+  if(_grades.find(g=>g.name===name)){ toast('ระดับชั้นนี้มีอยู่แล้ว','er'); return; }
+  _grades.push({name});
+  await gasConfigPost({action:'addGrade',data:{name}});
+  document.getElementById('newGradeName').value='';
+  renderManage(); syncDropdowns();
+  toast('✅ เพิ่มระดับชั้น '+name+' แล้ว','ok');
+}
+
+async function editGrade(i){
+  const oldName = _grades[i].name;
+  const newName = prompt('ระดับชั้น:', _grades[i].name);
+  if(newName===null) return;
+  _grades[i].name = newName.trim() || _grades[i].name;
+  await gasConfigPost({action:'updateGrade',oldName,data:{name:_grades[i].name}});
+  renderManage(); syncDropdowns();
+  toast('✅ แก้ไขระดับชั้นแล้ว','ok');
+}
+
+async function delGrade(i){
+  const name = _grades[i].name;
+  const cnt = DATA.filter(a=>a.grade===name).length;
+  const msg = cnt>0 ? `ระดับชั้น "${name}" มีสินทรัพย์ ${cnt} รายการ\nยืนยันลบ?` : `ลบระดับชั้น "${name}"?`;
+  if(!confirm(msg)) return;
+  _grades.splice(i,1);
+  await gasConfigPost({action:'deleteGrade',name});
+  renderManage(); syncDropdowns();
+  toast('🗑️ ลบระดับชั้นแล้ว');
 }
 
 </script>
