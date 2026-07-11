@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ข้อมูลสินทรัพย์ — รร.เมืองกระบี่</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B2B5E;--gold:#F5A623;--white:#fff;
+  --g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;--g400:#94A3B8;--g600:#475569;--g800:#1E293B;
+  --green:#10B981;--red:#EF4444;--amber:#F59E0B;--blue:#3B82F6;
+  --r:14px;--sh:0 2px 8px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.06);
+}
+body{font-family:'Sarabun',sans-serif;background:var(--g50);color:var(--g800);
+  min-height:100vh;padding:16px;}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:80vh;gap:16px;color:var(--g400)}
+.spinner{width:40px;height:40px;border:3px solid var(--g200);border-top-color:var(--navy);
+  border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.error-card{background:#fff;border-radius:var(--r);padding:32px;text-align:center;
+  box-shadow:var(--sh);max-width:400px;margin:40px auto}
+.error-icon{font-size:48px;margin-bottom:12px}
+.error-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px}
+.error-sub{font-size:14px;color:var(--g400)}
+
+/* CARD */
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);
+  max-width:480px;margin:0 auto;overflow:hidden}
+
+/* HEADER */
+.card-header{background:linear-gradient(135deg,var(--navy) 0%,#243571 100%);
+  padding:24px 20px;color:#fff;position:relative}
+.school-badge{display:flex;align-items:center;gap:8px;margin-bottom:16px;
+  font-size:12px;opacity:.7}
+.asset-id{font-size:11px;font-family:monospace;background:rgba(255,255,255,.15);
+  padding:3px 10px;border-radius:20px;letter-spacing:.05em}
+.asset-name{font-size:22px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.asset-cat{font-size:13px;opacity:.75;display:flex;align-items:center;gap:5px}
+.status-pill{
+  position:absolute;top:20px;right:20px;
+  padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;
+}
+.s-ดี{background:#D1FAE5;color:#065F46}
+.s-ชำรุด{background:#FEE2E2;color:#991B1B}
+.s-รอซ่อม{background:#FEF3C7;color:#92400E}
+.s-จำหน่าย{background:var(--g100);color:var(--g600)}
+
+/* PHOTO */
+.card-photo{width:100%;height:220px;object-fit:cover;background:var(--g100);
+  display:flex;align-items:center;justify-content:center;font-size:64px}
+.card-photo img{width:100%;height:100%;object-fit:cover}
+
+/* LOCATION BANNER */
+.location-banner{
+  background:var(--g50);border-bottom:1px solid var(--g200);
+  padding:14px 20px;display:flex;align-items:center;gap:10px;
+}
+.loc-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.loc-info{flex:1}
+.loc-name{font-size:15px;font-weight:700;color:var(--navy)}
+.loc-sub{font-size:12px;color:var(--g400)}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  background:var(--g200);}
+.info-item{background:#fff;padding:14px 16px}
+.info-label{font-size:11px;color:var(--g400);font-weight:600;
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.info-value{font-size:15px;font-weight:700;color:var(--g800)}
+.info-item.full{grid-column:1/-1}
+
+/* AGE BAR */
+.age-section{padding:16px 20px;border-bottom:1px solid var(--g100)}
+.age-label{font-size:12px;color:var(--g400);font-weight:600;margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.04em}
+.age-timeline{display:flex;flex-direction:column;gap:8px}
+.age-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.age-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.age-text{color:var(--g600)}
+.age-badge{margin-left:auto;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.age-new{background:#D1FAE5;color:#065F46}
+.age-mid{background:#FEF3C7;color:#92400E}
+.age-old{background:#FEE2E2;color:#991B1B}
+.age-bar-wrap{margin-top:10px;background:var(--g100);border-radius:20px;height:6px;overflow:hidden}
+.age-bar-fill{height:100%;border-radius:20px;transition:width .8s ease}
+
+/* NOTE */
+.note-section{padding:14px 20px;border-bottom:1px solid var(--g100)}
+.note-text{font-size:14px;color:var(--g600);line-height:1.6;
+  background:var(--g50);border-radius:8px;padding:10px 12px}
+
+/* FOOTER */
+.card-footer{padding:16px 20px;text-align:center;background:var(--g50)}
+.footer-logo{font-size:13px;color:var(--g400);display:flex;align-items:center;
+  justify-content:center;gap:6px}
+.scan-time{font-size:11px;color:var(--g400);margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <span>กำลังโหลดข้อมูล...</span>
+</div>
+
+<div id="content" style="display:none"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw6erDkhNw-ewi6TaDe7p-vN_CSIpZbOk-JRTBq9rFS-W2invohDGu5-dbrIrp4R8kaTA/exec';
+const BLDG_COLORS = {A:'#3B82F6',B:'#10B981',C:'#F59E0B',D:'#EF4444'};
+
+function getParam(key){
+  return new URLSearchParams(window.location.search).get(key)||'';
+}
+
+function formatDateTH(d){
+  if(!d) return '-';
+  const dt = new Date(d);
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+}
+
+function calcAge(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  if(isNaN(d)) return null;
+  const days = Math.floor((new Date()-d)/(1000*60*60*24));
+  if(days<0) return null;
+  if(days<30) return {text:days+'วัน',cls:'age-new',pct:Math.min(days/365*100,100)};
+  if(days<365){
+    const m=Math.floor(days/30);
+    return {text:m+'เดือน '+(days%30)+'วัน',cls:'age-new',pct:Math.min(days/365*100,100)};
+  }
+  const y=Math.floor(days/365);
+  const m=Math.floor((days%365)/30);
+  const cls = y<5?'age-mid':'age-old';
+  return {text:y+'ปี '+(m>0?m+'เดือน':''),cls,pct:Math.min(y/10*100,100)};
+}
+
+function drvThumb(url){
+  if(!url) return '';
+  const m=url.match(/\/d\/([^/]+)/);
+  return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600':url;
+}
+
+function showError(msg){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('content').style.display='block';
+  document.getElementById('content').innerHTML=`
+    <div class="error-card">
+      <div class="error-icon">🔍</div>
+      <div class="error-title">ไม่พบข้อมูลสินทรัพย์</div>
+      <div class="error-sub">${msg}</div>
+    </div>`;
+}
+
+function renderAsset(a){
+  const bldColor = BLDG_COLORS[a.building]||'#888';
+  const thumb = drvThumb(a.imageUrl);
+  const ageReceived = calcAge(a.dateReceived);
+  const ageUsed = calcAge(a.dateUsed);
+  const now = new Date().toLocaleString('th-TH');
+
+  document.title = a.name+' — รร.เมืองกระบี่';
+
+  return `
+  <div class="card">
+    <div class="card-header">
+      <div class="school-badge">🏫 โรงเรียนเมืองกระบี่</div>
+      <span class="status-pill s-${a.status}">${a.status}</span>
+      <div class="asset-name">${a.name}</div>
+      <div class="asset-cat">
+        ${a.category||''}${a.brand?' · '+a.brand:''}
+      </div>
+      <div style="margin-top:10px">
+        <span class="asset-id">${a.id}</span>
+      </div>
+    </div>
+
+    ${thumb?`
+    <div class="card-photo">
+      <img src="${thumb}" alt="${a.name}" onerror="this.parentElement.textContent='🖼️'">
+    </div>`:`
+    <div class="card-photo">📦</div>`}
+
+    <div class="location-banner">
+      <div class="loc-dot" style="background:${bldColor}"></div>
+      <div class="loc-info">
+        <div class="loc-name">อาคาร ${a.building} — ห้อง ${a.room}</div>
+        <div class="loc-sub">${a.grade||''}</div>
+      </div>
+      <div style="font-size:20px">${a.building}</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">ประเภท</div>
+        <div class="info-value">${a.category||'-'}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">จำนวน</div>
+        <div class="info-value">${a.qty||'-'} ชิ้น</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ยี่ห้อ/รุ่น</div>
+        <div class="info-value">${a.brand||'-'}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">หมายเลขครุภัณฑ์</div>
+        <div class="info-value" style="font-size:13px">${a.serial||'-'}</div>
+      </div>
+      ${a.year?`
+      <div class="info-item full">
+        <div class="info-label">ปีที่ได้มา</div>
+        <div class="info-value">พ.ศ. ${a.year}</div>
+      </div>`:''}
+    </div>
+
+    ${(a.dateReceived||a.dateUsed)?`
+    <div class="age-section">
+      <div class="age-label">📅 วันที่และอายุการใช้งาน</div>
+      <div class="age-timeline">
+        ${a.dateReceived?`
+        <div class="age-row">
+          <div class="age-dot" style="background:var(--blue)"></div>
+          <span class="age-text">รับเข้า: ${formatDateTH(a.dateReceived)}</span>
+          ${ageReceived?`<span class="age-badge ${ageReceived.cls}">${ageReceived.text}</span>`:''}
+        </div>`:''}
+        ${a.dateUsed?`
+        <div class="age-row">
+          <div class="age-dot" style="background:var(--green)"></div>
+          <span class="age-text">ใช้งาน: ${formatDateTH(a.dateUsed)}</span>
+          ${ageUsed?`<span class="age-badge ${ageUsed.cls}">${ageUsed.text}</span>`:''}
+        </div>
+        ${ageUsed?`
+        <div class="age-bar-wrap">
+          <div class="age-bar-fill" 
+            style="width:${ageUsed.pct}%;background:${ageUsed.cls==='age-new'?'#10B981':ageUsed.cls==='age-mid'?'#F59E0B':'#EF4444'}">
+          </div>
+        </div>`:''}
+        `:''}
+      </div>
+    </div>`:''}
+
+    ${a.note?`
+    <div class="note-section">
+      <div class="info-label" style="margin-bottom:6px">หมายเหตุ</div>
+      <div class="note-text">${a.note}</div>
+    </div>`:''}
+
+    <div class="card-footer">
+      <div class="footer-logo">🏫 ระบบสินทรัพย์ห้องเรียน โรงเรียนเมืองกระบี่</div>
+      <div class="scan-time">สแกนเมื่อ ${now}</div>
+    </div>
+  </div>`;
+}
+
+async function loadAsset(){
+  const id = getParam('id');
+  if(!id){ showError('ไม่พบรหัสสินทรัพย์ใน QR Code'); return; }
+
+  try{
+    const cb = '_cb'+Date.now();
+    const result = await new Promise((resolve,reject)=>{
+      window[cb]=function(d){resolve(d);delete window[cb];};
+      const sc=document.createElement('script');
+      sc.onerror=()=>{reject(new Error('โหลดไม่สำเร็จ'));delete window[cb];};
+      sc.src=GAS_URL+'?action=getAll&callback='+cb;
+      document.head.appendChild(sc);
+      setTimeout(()=>{if(window[cb]){reject(new Error('หมดเวลา'));delete window[cb];}},10000);
+    });
+
+    if(!result||!result.success) throw new Error('GAS ตอบกลับผิดพลาด');
+
+    const asset = (result.data.assets||[]).find(a=>a.id===id);
+    if(!asset) throw new Error('ไม่พบสินทรัพย์รหัส: '+id);
+
+    document.getElementById('loading').style.display='none';
+    const content = document.getElementById('content');
+    content.style.display='block';
+    content.innerHTML = renderAsset(asset);
+
+  }catch(err){
+    showError(err.message);
+  }
+}
+
+loadAsset();
+</script>
+</body>
+</html>
